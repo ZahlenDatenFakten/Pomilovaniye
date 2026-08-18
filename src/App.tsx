@@ -4,7 +4,7 @@ import GovernorDecreeView from './components/GovernorDecreeView';
 export default function App() {
   const mockUser = {
     id: '123',
-    role: 'Губернатор',
+    role: 'Р“СѓР±РµСЂРЅР°С‚РѕСЂ',
     full_name: 'Test Governor',
     discord_roles: ['1527281334135947285']
   };
