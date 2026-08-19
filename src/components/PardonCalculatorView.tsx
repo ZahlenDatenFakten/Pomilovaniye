@@ -407,7 +407,7 @@ export default function PardonCalculatorView() {
 КРИТИЧЕСКИЕ ПРАВИЛА ИЗВЛЕЧЕНИЯ:
 1. ИМЯ И ПАСПОРТ ГРАЖДАНИНА (Кому делается помилование):
    - Ищи Имя_Фамилия СТРОГО внутри темно-синей карточки базы данных database.gov.
-   - Имя гражданина написано возле аватарки персонажа прямо над надписью "Паспорт #XXXXXX" (например: Danek_Fillin, Dazai_Has).
+   - Имя гражданина написано возле аватарки персонажа прямо над надписью "Паспорт #XXXXXX".
    - КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО брать имя из верхнего правого угла экрана (оверлей игры с ником игрока/губернатора), а также из колонок "ПРОВОДИЛ АРЕСТ"!
    - Номер паспорта находится под именем в формате "Паспорт #XXXXXX" или в поле "Номер паспорта" слева.
    - Формат ответа имени: Имя_Фамилия (через подчеркивание).
@@ -416,12 +416,23 @@ export default function PardonCalculatorView() {
    - Внимательно просмотри КАЖДУЮ строку таблицы (колонки "ДАТА", "СТАТЬЯ", "ПРОВОДИЛ АРЕСТ").
    - Извлеки время, дату и ВСЕ коды статей (например: 17.6, 12.7, 15.6, 17.1).
    - Если в одной ячейке или строке указано несколько статей (например '15.6, 17.1, 12.8'), выведи КАЖДУЮ статью отдельной строкой.
-   - НЕ пропускай ни одной статьи!
 
-Верни результат СТРОГО в следующем формате без кавычек и без дополнительных комментариев:
-ФИО: Имя_Фамилия | номер_паспорта
-ЧЧ:ММ ДД.ММ.ГГГГ\tкод_статьи
-ЧЧ:ММ ДД.ММ.ГГГГ\tкод_статьи`;
+Верни результат СТРОГО в формате валидного JSON объекта.
+Сначала добавь поле "_thinking", где ты кратко рассуждаешь, где находится нужное имя (отбрасывая имена полицейских) и где находятся статьи.
+Затем добавь поле "name" (строка, Имя_Фамилия).
+Поле "passport" (строка, номер).
+Поле "articles" - массив объектов с полями "date" (ДД.ММ.ГГГГ), "time" (ЧЧ:ММ) и "code" (например "12.8").
+
+Пример JSON:
+{
+  "_thinking": "Имя находится над аватаркой, это Ivan_Ivanov. Полицейский - John_Doe, его игнорирую. Статьи в таблице: 17.6 и 12.8...",
+  "name": "Ivan_Ivanov",
+  "passport": "12345",
+  "articles": [
+    { "date": "12.08.2023", "time": "12:30", "code": "17.6" },
+    { "date": "12.08.2023", "time": "12:30", "code": "12.8" }
+  ]
+}`;
 
     try {
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -431,7 +442,8 @@ export default function PardonCalculatorView() {
           'Authorization': 'Bearer ' + apiKey.trim()
         },
         body: JSON.stringify({
-          model: 'qwen/qwen3.6-27b',
+          model: 'llama-3.2-90b-vision-preview',
+          response_format: { type: "json_object" },
           messages: [{
             role: 'user',
             content: [
@@ -440,7 +452,7 @@ export default function PardonCalculatorView() {
             ]
           }],
           temperature: 0.1,
-          max_tokens: 1024
+          max_tokens: 1500
         })
       });
 
@@ -452,9 +464,30 @@ export default function PardonCalculatorView() {
       const raw = data.choices?.[0]?.message?.content || '';
       if (!raw.trim()) throw new Error('Пустой ответ от модели.');
 
-      setDebugLogText(`Groq ответ:\n${raw.substring(0, 800)}`);
+      setDebugLogText(`Groq ответ:\n${raw.substring(0, 1500)}`);
       setShowDebug(true);
-      return raw;
+
+      let parsed;
+      try {
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsed = JSON.parse(jsonMatch[0]);
+        } else {
+          parsed = JSON.parse(raw);
+        }
+      } catch (e) {
+        return raw; // Fallback to raw text
+      }
+
+      // Reconstruct text for parseTextToRows
+      let reconstructed = `ФИО: ${parsed.name || ''} | ${parsed.passport || ''}\n`;
+      if (parsed.articles && Array.isArray(parsed.articles)) {
+        parsed.articles.forEach((art: any) => {
+          reconstructed += `${art.time || ''} ${art.date || ''}\t${art.code || ''}\n`;
+        });
+      }
+
+      return reconstructed;
     } catch (err: any) {
       setStatusMessage(`Ошибка Groq: ${err.message}`);
       setStatusColor('red');
