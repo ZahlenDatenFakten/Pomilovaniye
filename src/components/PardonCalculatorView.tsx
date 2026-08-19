@@ -523,8 +523,8 @@ export default function PardonCalculatorView() {
     let foundName = '';
 
     // Strategy A: Explicit line from Groq Prompt
-    // Updated regex to include spaces and dots
-    const fioFormatMatch = rawText.match(/ФИО:\s*([A-Za-zА-Яа-я_\-\.\s]{3,40})(?:\s*\|\s*(\d{4,8}))?/i);
+    // Updated regex to include spaces, dots, and numbers (in case of OCR substitutions like O->0)
+    const fioFormatMatch = rawText.match(/ФИО:\s*([A-Za-zА-Яа-я0-9_\-\.\s]{3,40})(?:\s*\|\s*(\d{4,8}))?/i);
     if (fioFormatMatch) {
       foundName = fioFormatMatch[1].trim();
       if (!foundPass && fioFormatMatch[2]) foundPass = fioFormatMatch[2].trim();
@@ -532,8 +532,8 @@ export default function PardonCalculatorView() {
 
     // Strategy B: Name adjacent to "Паспорт #" inside profile card
     if (!foundName) {
-      const nearPassMatch = rawText.match(/([A-ZА-Я][a-zа-яA-ZА-Я]{1,20}[_\s]+[A-ZА-Я][a-zа-яA-ZА-Я]{1,20})[\r\n\s]*Паспорт\s*#?\s*(\d{4,8})/i) ||
-                            rawText.match(/Паспорт\s*#?\s*(\d{4,8})[\r\n\s]*([A-ZА-Я][a-zа-яA-ZА-Я]{1,20}[_\s]+[A-ZА-Я][a-zа-яA-ZА-Я]{1,20})/i);
+      const nearPassMatch = rawText.match(/([A-ZА-Яa-zа-я0-9]{2,20}[_\s]+[A-ZА-Яa-zа-я0-9]{2,20})[\r\n\s]*Паспорт\s*#?\s*(\d{4,8})/i) ||
+                            rawText.match(/Паспорт\s*#?\s*(\d{4,8})[\r\n\s]*([A-ZА-Яa-zа-я0-9]{2,20}[_\s]+[A-ZА-Яa-zа-я0-9]{2,20})/i);
       if (nearPassMatch) {
         const potentialName = (nearPassMatch[1] && isNaN(Number(nearPassMatch[1])) ? nearPassMatch[1] : nearPassMatch[2]).trim().replace(/\s+/, '_');
         const normPot = potentialName.toLowerCase();
@@ -548,7 +548,7 @@ export default function PardonCalculatorView() {
       const passPos = foundPass ? rawText.indexOf(foundPass) : -1;
       const focusSnippet = passPos !== -1 ? rawText.slice(Math.max(0, passPos - 350), passPos + 100) : rawText;
 
-      const nameRegex = /(?:^|[^A-ZА-Яa-zа-я_\-])([A-ZА-Я][a-zа-яA-ZА-Я]{1,20}[_\s]+[A-ZА-Я][a-zа-яA-ZА-Я]{1,20})(?=$|[^A-ZА-Яa-zа-я_\-])/g;
+      const nameRegex = /(?:^|[^A-ZА-Яa-zа-я_\-])([A-ZА-Яa-zа-я]{2,20}[_\s]+[A-ZА-Яa-zа-я]{2,20})(?=$|[^A-ZА-Яa-zа-я_\-])/gi;
       const getMatches = (text) => {
           const matches = [];
           let m;
