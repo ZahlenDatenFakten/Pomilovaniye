@@ -510,14 +510,9 @@ export default function PardonCalculatorView() {
     // 3. EXTRACT TARGET CITIZEN NAME
     let foundName = '';
 
-<<<<<<< HEAD
-    // Strategy A: Explicit "ФИО: Name | Passport" line from Groq
-    const fioFormatMatch = rawText.match(/ФИО:\s*([A-Za-zА-Яа-я0-9_-]{3,35})(?:\s*\|\s*(\d{4,8}))?/i);
-=======
     // Strategy A: Explicit line from Groq Prompt
     // Updated regex to include spaces and dots
     const fioFormatMatch = rawText.match(/ФИО:\s*([A-Za-zА-Яа-я0-9_\-\.\s]{3,40})(?:\s*\|\s*(\d{4,8}))?/i);
->>>>>>> cf287ac (Fix Name/Surname extraction logic to guarantee 100% accuracy in both modes)
     if (fioFormatMatch) {
       foundName = fioFormatMatch[1].trim();
       if (!foundPass && fioFormatMatch[2]) foundPass = fioFormatMatch[2].trim();
@@ -525,63 +520,43 @@ export default function PardonCalculatorView() {
 
     // Strategy B: Name adjacent to "Паспорт #" inside profile card
     if (!foundName) {
-<<<<<<< HEAD
-      const nearPassMatch = rawText.match(/([A-Z][a-z0-9]{1,15}[_\s]+[A-Z][a-z0-9]{1,20})[\r\n\s]*Паспорт\s*#?\s*(\d{4,8})/i) ||
-                            rawText.match(/Паспорт\s*#?\s*(\d{4,8})[\r\n\s]*([A-Z][a-z0-9]{1,15}[_\s]+[A-Z][a-z0-9]{1,20})/i);
+      const nearPassMatch = rawText.match(/([A-ZА-Я][a-zа-яA-ZА-Я0-9]{1,20}[_\s]+[A-ZА-Я][a-zа-яA-ZА-Я0-9]{1,20})[\r\n\s]*Паспорт\s*#?\s*(\d{4,8})/i) ||
+                            rawText.match(/Паспорт\s*#?\s*(\d{4,8})[\r\n\s]*([A-ZА-Я][a-zа-яA-ZА-Я0-9]{1,20}[_\s]+[A-ZА-Я][a-zа-яA-ZА-Я0-9]{1,20})/i);
       if (nearPassMatch) {
         const potentialName = (nearPassMatch[1] && isNaN(Number(nearPassMatch[1])) ? nearPassMatch[1] : nearPassMatch[2]).trim().replace(/\s+/, '_');
         const normPot = potentialName.toLowerCase();
-        if (!arrestingOfficers.has(normPot) && !/database|gov|gta5|rp|lspd|fbi|usss|redwood/i.test(potentialName)) {
+        if (!arrestingOfficers.has(normPot) && !/database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|police|sheriff/i.test(potentialName)) {
           foundName = potentialName;
         }
       }
     }
 
-    // Strategy C: Search snippet around Passport position
+    // Strategy C: Search snippet around Passport position and global regex
     if (!foundName) {
       const passPos = foundPass ? rawText.indexOf(foundPass) : -1;
       const focusSnippet = passPos !== -1 ? rawText.slice(Math.max(0, passPos - 350), passPos + 100) : rawText;
 
-      const nameMatchList = focusSnippet.match(/\b([A-Za-z0-9]{2,15}_[A-Za-z0-9]{2,20})\b/g) ||
-                            rawText.match(/\b([A-Za-z0-9]{2,15}_[A-Za-z0-9]{2,20})\b/g) || [];
+      const nameRegex = /(?:^|[\s,;:.!?"'\[\]{}()])([A-ZА-Я][a-zа-яA-ZА-Я0-9]{1,20}[_\s]+[A-ZА-Я][a-zа-яA-ZА-Я0-9]{1,20})(?=$|[\s,;:.!?"'\[\]{}()])/g;
+      const getMatches = (text) => {
+          const matches = [];
+          let m;
+          while ((m = nameRegex.exec(text)) !== null) {
+              matches.push(m[1]);
+          }
+          return matches;
+      };
+
+      const nameMatchList = [...getMatches(focusSnippet), ...getMatches(rawText)];
 
       const validName = nameMatchList.find(n => {
         const norm = n.toLowerCase();
-        return !arrestingOfficers.has(norm) && !/database|gov|gta5|rp|lspd|fbi|usss|redwood|jorno|vegas/i.test(n);
-=======
-      // Find all potential names: 2 words with space or underscore, First letter capitalized or all caps
-      const allNames = rawText.match(/\b([A-ZА-Я][a-zа-яA-ZА-Я0-9]{1,20}[_\s]+[A-ZА-Я][a-zа-яA-ZА-Я0-9]{1,20})\b/g) || [];
-      const validName = allNames.find(n => {
-        const norm = n.toLowerCase();
-        return !arrestingOfficers.has(norm.replace(/\s+/, '_')) && !/database|gov|gta5|lspd|fbi|fib|usss|sasp|redwood|police|sheriff/i.test(n);
->>>>>>> cf287ac (Fix Name/Surname extraction logic to guarantee 100% accuracy in both modes)
+        return !arrestingOfficers.has(norm.replace(/\s+/, '_')) && !/database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff/i.test(n);
       });
 
       if (validName) foundName = validName;
     }
 
-<<<<<<< HEAD
     // Format foundName nicely with proper Capitalization and Underscore
-=======
-    // Strategy C: Just look for a name right before or near "Паспорт"
-    if (!foundName) {
-      const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
-      const passLineIndex = lines.findIndex(l => /Паспорт/i.test(l));
-      if (passLineIndex >= 0) {
-        // Try extracting from the same line first
-        const sameLineNameMatch = lines[passLineIndex].match(/([A-ZА-Я][a-zа-яA-ZА-Я0-9]{1,20}[_\s]+[A-ZА-Я][a-zа-яA-ZА-Я0-9]{1,20})/);
-        if (sameLineNameMatch) {
-           foundName = sameLineNameMatch[1];
-        } else if (passLineIndex > 0) {
-          const potentialName = lines[passLineIndex - 1];
-          if (/^[A-Za-zА-Яа-я]{2,20}[_\s]+[A-Za-zА-Яа-я]{2,20}$/.test(potentialName)) {
-             foundName = potentialName;
-          }
-        }
-      }
-    }
-
->>>>>>> cf287ac (Fix Name/Surname extraction logic to guarantee 100% accuracy in both modes)
     if (foundName) {
       // Normalize to First_Last format securely
       foundName = foundName.replace(/[\s\.]+/g, '_');
