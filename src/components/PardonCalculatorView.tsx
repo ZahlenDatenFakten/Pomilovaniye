@@ -1100,13 +1100,13 @@ export default function PardonCalculatorView() {
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-white/10 text-white/40 uppercase tracking-wider font-semibold">
+                <th className="pb-3 px-3 w-10 text-center"></th>
                 <th className="pb-3 px-3">Статья</th>
                 <th className="pb-3 px-3">Дата получения</th>
                 <th className="pb-3 px-3">Время</th>
                 <th className="pb-3 px-3">Тяжесть статьи</th>
                 <th className="pb-3 px-3">Пошлина</th>
                 <th className="pb-3 px-3">Статус</th>
-                <th className="pb-3 px-3 text-right">Действие</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -1119,6 +1119,17 @@ export default function PardonCalculatorView() {
               ) : (
                 rowCalculations.map(row => (
                   <tr key={row.id} className={row.isBlocked ? 'bg-rose-500/[0.04]' : 'hover:bg-white/[0.02]'}>
+                    {/* Delete */}
+                    <td className="py-3 px-3 text-center">
+                      <button
+                        onClick={() => handleRemoveRow(row.id)}
+                        className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                        title="Удалить статью"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+
                     {/* Article Code */}
                     <td className="py-3 px-3">
                       <input
@@ -1179,16 +1190,6 @@ export default function PardonCalculatorView() {
                       }`}>
                         {row.statusText}
                       </span>
-                    </td>
-
-                    {/* Delete */}
-                    <td className="py-3 px-3 text-right">
-                      <button
-                        onClick={() => handleRemoveRow(row.id)}
-                        className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </td>
                   </tr>
                 ))
