@@ -1,3 +1,21 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ *  OCR EXTRACTOR — Ядро извлечения данных из базы GTA 5 RP
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+
+export const CONFIG = {
+  CONTEXT_RADIUS: 180,
+  MIN_NAME_LENGTH: 4,
+  MAX_NAME_LENGTH: 40,
+  STOP_WORDS: [
+    'фио', 'паспорт', 'фамилия', 'уровень', 'мужской', 'женский',
+    'гражданство', 'прописка', 'организация', 'должность',
+    'passport', 'surname', 'статья', 'розыск', 'штраф', 'наличные',
+    'следственный', 'изолятор', 'тюрьма'
+  ]
+};
+
 export interface ArrestRecord {
   time: string;
   date: string;
@@ -14,154 +32,72 @@ export interface ExtractedData {
 }
 
 /**
- * Инициализация Tesseract и распознавание текста с улучшенными настройками
+ * OCR-коррекция опечаток (0→O, 1→I, 3→E/Е, 4→A...) и приведение к Title_Case
  */
-export async function recognizeAndExtract(
-  imageUrl: string, 
-  onProgress?: (progress: number) => void
-): Promise<ExtractedData> {
-  const Tesseract = (window as any).Tesseract;
-  if (!Tesseract) {
-    throw new Error('Tesseract.js не загружен');
-  }
+export function formatName(rawName: string): string {
+  if (!rawName) return '';
 
-  // Создаем воркер (для GTA 5 RP русский + английский)
-  const worker = await Tesseract.createWorker('rus+eng', 1, {
-    logger: (m: any) => {
-      if (m.status === 'recognizing text' && onProgress) {
-        onProgress(Math.round(m.progress * 100));
-      }
-    }
-  });
+  const rawParts = rawName.split('_').filter(Boolean);
+  const parts = rawParts.length > 2 ? [rawParts[0], rawParts[1]] : rawParts;
 
-  // Улучшаем точность через ограничение символов (whitelist)
-  // Разрешаем только латиницу, кириллицу, цифры и базовую пунктуацию из базы данных
-  const whitelist = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789 _-.,:;#№/|';
-  await worker.setParameters({
-    tessedit_char_whitelist: whitelist
-  });
+  return parts.map(part => {
+    if (!part) return '';
 
-  const result = await worker.recognize(imageUrl);
-  const text = result.data.text.trim();
-  
-  await worker.terminate();
+    const isCyrillic = /[а-яА-ЯёЁ]/.test(part);
+    let corrected = part;
 
-  return parseOcrText(text);
-}
-
-/**
- * Главная функция парсинга всего распознанного текста
- */
-export function parseOcrText(rawText: string): ExtractedData {
-  if (!rawText) {
-    return { name: null, passport: null, records: [], rawText: '' };
-  }
-
-  const { name, passport, text: cleanedText } = extractNameAndPassport(rawText);
-  const records = parseTableRecords(cleanedText);
-
-  return { name, passport, records, rawText };
-}
-
-/**
- * 1. ИЗВЛЕЧЕНИЕ ИМЕНИ И ПАСПОРТА
- * Использует пуленепробиваемую логику очистки от приклеенных слов
- */
-function extractNameAndPassport(rawText: string) {
-  let name: string | null = null;
-  let passport: string | null = null;
-
-  let text = rawText;
-
-  // 1.1 Отделяем даты/статьи
-  text = text.replace(/(\d{1,2}[.,:]\d{1,2}(?:[.,:]\d{2,4})?)/g, ' $1 ');
-
-  // 1.2 Отделяем знаки препинания (кроме подчеркивания)
-  text = text.replace(/[:;.,!?|\\/(){}\[\]<>+="\-'`~#№]/g, ' $& ');
-
-  // 1.3 Отделяем длинные системные слова
-  const safeKeywords = [
-      'фио', 'паспорт', 'фамилия', 'уровень', 'мужской', 'женский', 
-      'гражданство', 'прописка', 'организация', 'должность', 
-      'passport', 'surname', 'статья', 'розыск', 'штраф', 'наличные'
-  ];
-  const safeRegex = new RegExp(`(${safeKeywords.join('|')})`, 'gi');
-  text = text.replace(safeRegex, ' $1 ');
-
-  // 1.4 Чиним подчеркивания
-  text = text.replace(/\s+_\s+|\s+_|_\s+/g, '_');
-  text = text.replace(/\s+/g, ' ').trim();
-
-  // 2. ИЗВЛЕЧЕНИЕ ПАСПОРТА
-  const passportRegex = /(?:Паспорт|ID|#|№)\s*[:\-]?\s*(\d{2,8})/i;
-  const passportMatch = text.match(passportRegex);
-  if (passportMatch) {
-    passport = passportMatch[1];
-  } else {
-    const rawPassportMatch = rawText.match(/(?:Паспорт|ID|#|№)[^\d]*(\d{2,8})/i);
-    if (rawPassportMatch) {
-      passport = rawPassportMatch[1];
+    if (isCyrillic) {
+      corrected = corrected
+        .replace(/0/g, 'о')
+        .replace(/1/g, 'и')
+        .replace(/3/g, 'е')
+        .replace(/4/g, 'а')
+        .replace(/6/g, 'б')
+        .replace(/8/g, 'в');
     } else {
-      const digitsMatch = text.match(/\b(\d{4,8})\b/);
-      if (digitsMatch) {
-        passport = digitsMatch[1];
-      }
+      corrected = corrected
+        .replace(/0/g, 'o')
+        .replace(/1/g, 'i')
+        .replace(/3/g, 'e')
+        .replace(/4/g, 'a')
+        .replace(/5/g, 's')
+        .replace(/7/g, 't')
+        .replace(/8/g, 'b');
     }
-  }
 
-  // 3. ИЗВЛЕЧЕНИЕ ИМЕНИ (Слово_Слово)
-  const arrestingOfficers = extractArrestingOfficers(rawText);
-  const nameRegex = /([a-zA-Zа-яА-ЯёЁ0-9]+_[a-zA-Zа-яА-ЯёЁ0-9]+)/g;
-  let matches: string[] = [];
-  let match;
-  
-  while ((match = nameRegex.exec(text)) !== null) {
-    matches.push(match[1]);
-  }
-
-  if (matches.length === 0) {
-    while ((match = nameRegex.exec(rawText)) !== null) {
-      matches.push(match[1]);
-    }
-  }
-
-  if (matches.length > 0) {
-    let validName = matches.find(m => {
-      if (!/[a-zA-Zа-яА-ЯёЁ]/.test(m)) return false;
-      const norm = m.toLowerCase();
-      if (arrestingOfficers.has(norm)) return false;
-      if (/database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff/i.test(m)) return false;
-      return true;
-    }) || matches[0];
-    
-    name = validName;
-
-    // 4. Ювелирная очистка
-    name = name.replace(/^(?:имя|и|пол|фио|пасп)(?=[A-ZА-ЯЁ]|[a-zA-Z])/i, '');
-    name = name.replace(/^(?:id|name|age|sex)(?=[A-ZА-ЯЁ]|[а-яА-ЯёЁ])/i, '');
-
-    name = name.replace(/(?<=[a-zA-Z])(?:лет|муж|жен)$/i, '');
-    name = name.replace(/(?<=[а-яА-ЯёЁ])(?:lvl|age)$/i, '');
-    name = name.replace(/([a-zа-яё])(?:Лет|Муж|Жен|Lvl|Age)$/, '$1');
-
-    name = name.replace(/\d{2,}$/, '');
-    name = name.replace(/^\d{2,}/, '');
-
-    name = name.split('_').map(part => {
-      if (!part) return '';
-      let lower = part.toLowerCase();
-      return lower.charAt(0).toUpperCase() + lower.slice(1);
-    }).join('_');
-  }
-
-  return { name, passport, text: rawText };
+    const lower = corrected.toLowerCase();
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  }).join('_');
 }
 
 /**
- * Собирает имена полицейских из таблицы, чтобы случайно не принять их за гражданина
+ * Извлечение номера паспорта (с маркерами и без)
  */
-function extractArrestingOfficers(rawText: string): Set<string> {
+export function extractPassport(text: string): string | null {
+  if (!text) return null;
+
+  const markerMatch = text.match(/(?:Паспорт|ID|#|№)\s*[:\-#№]?\s*(\d{4,8})/i);
+  if (markerMatch) return markerMatch[1];
+
+  const rawMatch = text.match(/(?:Паспорт|ID|#|№)[^\d\n]{0,10}(\d{4,8})/i);
+  if (rawMatch) return rawMatch[1];
+
+  const sixDigitMatch = text.match(/(?:^|[^\d])(\d{6})(?=[^\d]|$)/);
+  if (sixDigitMatch) return sixDigitMatch[1];
+
+  const genericMatch = text.match(/(?:^|[^\d])(\d{5,7})(?=[^\d]|$)/);
+  if (genericMatch) return genericMatch[1];
+
+  return null;
+}
+
+/**
+ * Извлечение имен офицеров, чтобы исключить их из поиска гражданина
+ */
+export function extractArrestingOfficers(rawText: string): Set<string> {
   const arrestingOfficers = new Set<string>();
+  if (!rawText) return arrestingOfficers;
+
   const lines = rawText.split('\n');
   lines.forEach(l => {
     if (/проводил\s*арест|напарник|lspd|fib|usss|shpd|lscsd|sasp/i.test(l)) {
@@ -173,75 +109,207 @@ function extractArrestingOfficers(rawText: string): Set<string> {
 }
 
 /**
- * 2. ИЗВЛЕЧЕНИЕ СТРОК ТАБЛИЦЫ (Дата, Время, Статья, Офицер, Изолятор)
+ * Извлечение Имени_Фамилии
  */
-function parseTableRecords(rawText: string): ArrestRecord[] {
+export function extractName(rawText: string, passport?: string | null): string | null {
+  if (!rawText) return null;
+
+  let text = rawText;
+
+  text = text.replace(/(\d{1,2}[.,:]\d{1,2}(?:[.,:]\d{2,4})?)/g, ' $1 ');
+  text = text.replace(/[:;.,!?|\\/(){}\[\]<>+="\-'`~#№]/g, ' $& ');
+
+  const safeRegex = new RegExp(`(${CONFIG.STOP_WORDS.join('|')})`, 'gi');
+  text = text.replace(safeRegex, ' $1 ');
+  text = text.replace(/\s+_\s+|\s+_|_\s+/g, '_');
+  text = text.replace(/\s+/g, ' ').trim();
+
+  const arrestingOfficers = extractArrestingOfficers(rawText);
+  const createRegex = () => /([a-zA-Zа-яА-ЯёЁ0-9]+(?:_[a-zA-Zа-яА-ЯёЁ0-9]+)+)/g;
+
+  let matches: string[] = [];
+  let match;
+
+  if (passport) {
+    const passIdx = text.indexOf(passport);
+    if (passIdx !== -1) {
+      const radius = CONFIG.CONTEXT_RADIUS;
+      const start = Math.max(0, passIdx - radius);
+      const end = Math.min(text.length, passIdx + passport.length + radius);
+      const contextChunk = text.slice(start, end);
+
+      const regex = createRegex();
+      while ((match = regex.exec(contextChunk)) !== null) {
+        matches.push(match[1]);
+      }
+    }
+  }
+
+  if (matches.length === 0) {
+    const regex = createRegex();
+    while ((match = regex.exec(text)) !== null) {
+      matches.push(match[1]);
+    }
+  }
+
+  if (matches.length === 0) {
+    const regex = createRegex();
+    while ((match = regex.exec(rawText)) !== null) {
+      matches.push(match[1]);
+    }
+  }
+
+  if (matches.length === 0) return null;
+
+  let validName = matches.find(m => {
+    if (!/[a-zA-Zа-яА-ЯёЁ]/.test(m)) return false;
+    const norm = m.toLowerCase();
+    if (arrestingOfficers.has(norm)) return false;
+    if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор)(?:_|$)/i.test(m)) return false;
+    return true;
+  });
+
+  if (!validName) return null;
+
+  // Очистка приклеенных приставок
+  validName = validName.replace(/^(?:ФИО|Имя|Паспорт|Пол|ID|Name|Passport)(?=[A-ZА-ЯЁ])/, '');
+  validName = validName.replace(/^(?:фио|имя|паспорт|пол)(?=[A-Za-z])/i, '');
+  validName = validName.replace(/^(?:id|name|passport)(?=[А-Яа-яЁё])/i, '');
+
+  // Очистка приклеенных суффиксов
+  validName = validName.replace(/(?<=[a-zA-Z])(?:лет|муж|жен)$/i, '');
+  validName = validName.replace(/(?<=[а-яА-ЯёЁ])(?:lvl|age)$/i, '');
+  validName = validName.replace(/([a-zа-яё])(?:Лет|Муж|Жен|Lvl|Age)$/, '$1');
+
+  validName = validName.replace(/\d{2,}$/, '');
+  validName = validName.replace(/^\d{2,}/, '');
+
+  return formatName(validName);
+}
+
+/**
+ * Базовое извлечение только Имени и Паспорта
+ */
+export function extractData(rawText: string): { name: string | null; passport: string | null } {
+  if (!rawText || typeof rawText !== 'string' || !rawText.trim()) {
+    return { name: null, passport: null };
+  }
+
+  const passport = extractPassport(rawText);
+  const name = extractName(rawText, passport);
+
+  return { name, passport };
+}
+
+/**
+ * Извлечение строк таблицы (Дата, Время, Статья, Офицер, Изолятор)
+ */
+export function parseTableRecords(rawText: string): ArrestRecord[] {
   const records: ArrestRecord[] = [];
-  
-  // Ищем все даты и время как маркеры начала строк таблицы
+  if (!rawText) return records;
+
   const dtRegex = /(\b\d{1,2}[:;]\d{2}\s+\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b|\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\s+\d{1,2}[:;]\d{2}\b)/g;
-  
+
   let match;
   let dtMatches = [];
-  
+
   while ((match = dtRegex.exec(rawText)) !== null) {
     dtMatches.push({
       text: match[0],
       index: match.index
     });
   }
-  
+
   for (let i = 0; i < dtMatches.length; i++) {
     const current = dtMatches[i];
     const next = dtMatches[i + 1];
-    
-    // Блок данных, принадлежащий этой записи
     const block = rawText.slice(current.index + current.text.length, next ? next.index : rawText.length);
-    
-    // Парсим дату и время
+
     let time = '';
     let date = '';
     const tMatch = current.text.match(/\d{1,2}[:;]\d{2}/);
     if (tMatch) time = tMatch[0].replace(';', ':');
-    
+
     const dMatch = current.text.match(/\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/);
     if (dMatch) date = dMatch[0].replace(/[/,-]/g, '.');
-    
+
     let remaining = block;
-    
-    // 2.1 Тюрьма / Место отбывания
     let jail = '';
     const jailMatch = remaining.match(/(?:следственн[а-я]+\s+изолятор|федеральн[а-я]+\s+тюрьма|тюрьма|fbi|lspd|fib|sasp|lscsd)/i);
     if (jailMatch) {
       jail = jailMatch[0].trim();
       remaining = remaining.replace(jailMatch[0], ' ');
     }
-    
-    // 2.2 Имя офицера
+
     let officer = '';
-    // Офицер обычно состоит из двух слов с большой буквы
     const officerMatch = remaining.match(/\b([A-ZА-ЯЁ][a-zа-яё0-9]+(?:_[A-ZА-ЯЁ][a-zа-яё0-9]+|\s+[A-ZА-ЯЁ][a-zа-яё0-9]+))\b/);
     if (officerMatch) {
       officer = officerMatch[1].replace(/\s+/, '_');
       remaining = remaining.replace(officerMatch[0], ' ');
     }
-    
-    // 2.3 Статьи
+
     const articleRegex = /\b\d{1,2}\.\d{1,2}(?:\.\d{1,2})?\b/g;
     const articles = [];
     let artMatch;
     while ((artMatch = articleRegex.exec(remaining)) !== null) {
-       articles.push(artMatch[0]);
+      articles.push(artMatch[0]);
     }
-    
+
     if (articles.length === 0) {
-       records.push({ time, date, article: '', officer, jail });
+      records.push({ time, date, article: '', officer, jail });
     } else {
-       for (const art of articles) {
-         records.push({ time, date, article: art, officer, jail });
-       }
+      for (const art of articles) {
+        records.push({ time, date, article: art, officer, jail });
+      }
     }
   }
-  
+
   return records;
+}
+
+/**
+ * Полный парсинг всего текста
+ */
+export function parseOcrText(rawText: string): ExtractedData {
+  if (!rawText) {
+    return { name: null, passport: null, records: [], rawText: '' };
+  }
+
+  const { name, passport } = extractData(rawText);
+  const records = parseTableRecords(rawText);
+
+  return { name, passport, records, rawText };
+}
+
+/**
+ * Асинхронная обертка для распознавания изображения через Tesseract.js
+ */
+export async function recognizeAndExtract(
+  imageUrl: string,
+  onProgress?: (progress: number) => void
+): Promise<ExtractedData> {
+  const Tesseract = (window as any).Tesseract;
+  if (!Tesseract) {
+    throw new Error('Tesseract.js не загружен');
+  }
+
+  const worker = await Tesseract.createWorker('rus+eng', 1, {
+    logger: (m: any) => {
+      if (m.status === 'recognizing text' && onProgress) {
+        onProgress(Math.round(m.progress * 100));
+      }
+    }
+  });
+
+  const whitelist = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789 _-.,:;#№/|';
+  await worker.setParameters({
+    tessedit_char_whitelist: whitelist
+  });
+
+  const result = await worker.recognize(imageUrl);
+  const text = result.data.text.trim();
+
+  await worker.terminate();
+
+  return parseOcrText(text);
 }
