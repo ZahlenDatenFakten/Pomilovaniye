@@ -860,9 +860,9 @@ export default function PardonCalculatorView() {
   return (
     <div className="w-full space-y-8 font-sans pb-12">
       {/* EXECUTIVE HEADER */}
-      <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-6 shadow-2xl shadow-black/40 backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/[0.07] rounded-2xl p-6 shadow-2xl shadow-black/60 backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-indigo-400 shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-zinc-400 shrink-0">
             <Award className="w-6 h-6" />
           </div>
           <div>
@@ -883,7 +883,7 @@ export default function PardonCalculatorView() {
           onClick={handleResetAll}
           className="flex items-center gap-2 px-4 py-2 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white rounded-xl text-xs font-semibold border border-white/[0.08] transition-all cursor-pointer shadow-lg active:scale-95"
         >
-          <RefreshCw className="w-4 h-4 text-indigo-400" />
+          <RefreshCw className="w-4 h-4 text-zinc-400" />
           Очистить всё
         </button>
       </div>
@@ -891,13 +891,13 @@ export default function PardonCalculatorView() {
       {/* TWO COLUMN CARDS: CONVICT & SCANNER */}
       <div className="grid grid-cols-1 xl:grid-cols-[400px_1fr] gap-8 items-start">
         {/* CARD 1: CONVICT INFORMATION */}
-        <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-6 space-y-6 shadow-2xl shadow-black/40 backdrop-blur-xl">
+        <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/[0.07] rounded-2xl p-6 space-y-6 shadow-2xl shadow-black/60 backdrop-blur-xl">
           <div className="border-b border-white/[0.06] pb-3">
             <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block mb-0.5">
               Анкетные данные
             </span>
             <h2 className="text-base font-bold text-white flex items-center gap-2.5">
-              <UserCheck className="w-4 h-4 text-indigo-400" />
+              <UserCheck className="w-4 h-4 text-zinc-400" />
               Данные Осуждённого
             </h2>
             <p className="text-xs text-zinc-400 mt-0.5">Ввод персональных данных для формирования указа</p>
@@ -915,11 +915,11 @@ export default function PardonCalculatorView() {
                   setFioWarning(false);
                 }}
                 className={`w-full bg-black/60 border rounded-xl px-4 py-2.5 text-sm text-white font-semibold focus:outline-none transition-colors ${
-                  fioWarning ? 'border-rose-500 focus:border-rose-400' : 'border-white/[0.08] focus:border-indigo-500/50'
+                  fioWarning ? 'border-zinc-500 focus:border-zinc-400' : 'border-white/[0.08] focus:border-zinc-500/50'
                 }`}
               />
               {fioWarning && (
-                <p className="text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
+                <p className="text-[11px] text-zinc-400 mt-1.5 flex items-center gap-1">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Имя распознано неуверенно — проверьте вручную
                 </p>
               )}
@@ -932,7 +932,7 @@ export default function PardonCalculatorView() {
                 placeholder="601226"
                 value={passport}
                 onChange={e => setPassport(e.target.value)}
-                className="w-full bg-black/60 border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm font-mono text-indigo-300 font-bold focus:border-indigo-500/50 focus:outline-none"
+                className="w-full bg-black/60 border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm font-mono text-zinc-300 font-bold focus:border-zinc-500/50 focus:outline-none"
               />
             </div>
 
@@ -942,9 +942,9 @@ export default function PardonCalculatorView() {
                 <button
                   type="button"
                   onClick={handleResetDailyDebt}
-                  className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0"
+                  className="px-3 py-1.5 bg-zinc-500/10 hover:bg-zinc-500/20 text-zinc-300 border border-zinc-500/30 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0"
                 >
-                  <RefreshCw className="w-3 h-3 text-rose-400" />
+                  <RefreshCw className="w-3 h-3 text-zinc-400" />
                   <span>Сбросить в $0</span>
                 </button>
               </div>
@@ -955,29 +955,29 @@ export default function PardonCalculatorView() {
                 placeholder="0"
                 value={previousDebt}
                 onChange={e => setPreviousDebt(e.target.value)}
-                className="w-full bg-black/60 border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm font-mono text-indigo-300 font-bold focus:border-indigo-500/50 focus:outline-none"
+                className="w-full bg-black/60 border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm font-mono text-zinc-300 font-bold focus:border-zinc-500/50 focus:outline-none"
               />
               <p className="text-[11px] text-white/40 leading-relaxed">
                 Вы можете вручную ввести любую начальную сумму. Новое помилование прибавится к ней.
               </p>
             </div>
 
-            <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-4 space-y-2.5 shadow-inner">
-              <div className="flex items-center justify-between text-xs font-bold text-indigo-300">
+            <div className="bg-zinc-500/10 border border-zinc-500/20 rounded-2xl p-4 space-y-2.5 shadow-inner">
+              <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
                 <span>Общая сумма за сутки долга:</span>
-                <span className="text-base font-mono font-extrabold text-emerald-400">{totalDailyDebt.toLocaleString('ru-RU')}$</span>
+                <span className="text-base font-mono font-extrabold text-zinc-400">{totalDailyDebt.toLocaleString('ru-RU')}$</span>
               </div>
               <p className="text-[10px] text-zinc-400 font-mono">
                 Накопленное ({prevDebtNum.toLocaleString('ru-RU')}$) + Текущее ({finalSum.toLocaleString('ru-RU')}$) = {totalDailyDebt.toLocaleString('ru-RU')}$
               </p>
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-indigo-500/15 text-[11px]">
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-500/15 text-[11px]">
                 <div className="bg-black/40 rounded-xl p-2 text-center border border-white/5">
                   <span className="text-white/50 text-[10px] uppercase font-bold block">🏛 В казну (85%)</span>
                   <span className="text-white font-mono font-bold">{treasurySum.toLocaleString('ru-RU')}$</span>
                 </div>
                 <div className="bg-black/40 rounded-xl p-2 text-center border border-white/5">
                   <span className="text-white/50 text-[10px] uppercase font-bold block">👑 Себе (15%)</span>
-                  <span className="text-indigo-300 font-mono font-bold">{selfSum.toLocaleString('ru-RU')}$</span>
+                  <span className="text-zinc-300 font-mono font-bold">{selfSum.toLocaleString('ru-RU')}$</span>
                 </div>
               </div>
             </div>
@@ -985,11 +985,11 @@ export default function PardonCalculatorView() {
         </div>
 
         {/* CARD 2: SCREENSHOT SCANNER & OCR */}
-        <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-6 space-y-6 shadow-2xl shadow-black/40 backdrop-blur-xl">
+        <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/[0.07] rounded-2xl p-6 space-y-6 shadow-2xl shadow-black/60 backdrop-blur-xl">
           <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <div>
               <h2 className="text-base font-bold text-white flex items-center gap-2.5">
-                <FileSearch className="w-5 h-5 text-indigo-400" />
+                <FileSearch className="w-5 h-5 text-zinc-400" />
                 Анализ Скриншота базы данных
               </h2>
               <p className="text-xs text-white/50 mt-0.5">Автоматическое распознавание ФИО, паспорта и судимостей</p>
@@ -997,7 +997,7 @@ export default function PardonCalculatorView() {
 
             {/* API Settings toggle */}
             <div className="relative group">
-              <button className="p-2 text-white/50 hover:text-indigo-300 hover:bg-white/5 rounded-xl transition-colors">
+              <button className="p-2 text-white/50 hover:text-zinc-300 hover:bg-white/5 rounded-xl transition-colors">
                 <Key className="w-4 h-4" />
               </button>
             </div>
@@ -1006,7 +1006,7 @@ export default function PardonCalculatorView() {
           {/* API Key Modal / Expandable */}
           <details className="bg-black/40 border border-white/10 rounded-2xl p-4 space-y-3">
             <summary className="text-xs font-bold text-white/70 cursor-pointer flex items-center gap-2">
-              <Key className="w-4 h-4 text-indigo-400" /> Настройки Groq Vision API
+              <Key className="w-4 h-4 text-zinc-400" /> Настройки Groq Vision API
             </summary>
             <div className="pt-2 space-y-2">
               <input
@@ -1014,7 +1014,7 @@ export default function PardonCalculatorView() {
                 placeholder="Вставьте API-ключ (console.groq.com/keys)"
                 value={apiKey}
                 onChange={e => handleApiKeyChange(e.target.value)}
-                className="w-full bg-black/60 border border-white/15 rounded-xl px-3.5 py-2 text-xs font-mono text-indigo-300 focus:border-indigo-500/50 focus:outline-none"
+                className="w-full bg-black/60 border border-white/15 rounded-xl px-3.5 py-2 text-xs font-mono text-zinc-300 focus:border-zinc-500/50 focus:outline-none"
               />
               <p className="text-[11px] text-white/40">
                 Бесплатный ключ сохраняется локально в вашем браузере.
@@ -1028,11 +1028,11 @@ export default function PardonCalculatorView() {
               onClick={() => setCurrentMethod('tesseract')}
               className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 currentMethod === 'tesseract'
-                  ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300 shadow-lg shadow-indigo-500/10'
+                  ? 'bg-zinc-600/20 border-zinc-500/40 text-zinc-300 shadow-lg shadow-zinc-500/10'
                   : 'bg-black/40 border-white/10 text-white/60 hover:text-white'
               }`}
             >
-              <FileSearch className="w-4 h-4 text-emerald-400" />
+              <FileSearch className="w-4 h-4 text-zinc-400" />
               Tesseract.js (Локальный OCR)
             </button>
 
@@ -1040,11 +1040,11 @@ export default function PardonCalculatorView() {
               onClick={() => setCurrentMethod('groq')}
               className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 currentMethod === 'groq'
-                  ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300 shadow-lg shadow-indigo-500/10'
+                  ? 'bg-zinc-600/20 border-zinc-500/40 text-zinc-300 shadow-lg shadow-zinc-500/10'
                   : 'bg-black/40 border-white/10 text-white/60 hover:text-white'
               }`}
             >
-              <Sparkles className="w-4 h-4 text-indigo-400" />
+              <Sparkles className="w-4 h-4 text-zinc-400" />
               Groq Vision AI
             </button>
           </div>
@@ -1058,7 +1058,7 @@ export default function PardonCalculatorView() {
               if (e.dataTransfer.files?.[0]) handleImageFile(e.dataTransfer.files[0]);
             }}
             className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
-              imagePreview ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-white/15 hover:border-indigo-500/50 bg-black/40'
+              imagePreview ? 'border-zinc-500/50 bg-zinc-500/5' : 'border-white/15 hover:border-zinc-500/50 bg-black/40'
             }`}
           >
             <input
@@ -1068,7 +1068,7 @@ export default function PardonCalculatorView() {
               className="hidden"
               onChange={e => e.target.files?.[0] && handleImageFile(e.target.files[0])}
             />
-            <Upload className={`w-8 h-8 mx-auto mb-2 ${imagePreview ? 'text-emerald-400' : 'text-indigo-400/80'}`} />
+            <Upload className={`w-8 h-8 mx-auto mb-2 ${imagePreview ? 'text-zinc-400' : 'text-zinc-400/80'}`} />
             <p className="text-xs font-bold text-white">
               {imagePreview ? '✅ Скриншот загружен' : 'Нажмите для выбора файла или перетащите скриншот сюда'}
             </p>
@@ -1087,7 +1087,7 @@ export default function PardonCalculatorView() {
           {/* Progress Bar */}
           {isAnalyzing && (
             <div className="w-full bg-black/60 rounded-full h-2 overflow-hidden border border-white/10">
-              <div className="bg-gradient-to-r from-indigo-500 to-violet-500 h-full transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
+              <div className="bg-gradient-to-r from-zinc-500 to-zinc-500 h-full transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
             </div>
           )}
 
@@ -1096,7 +1096,7 @@ export default function PardonCalculatorView() {
             <button
               onClick={handleAnalyzeImage}
               disabled={isAnalyzing || !uploadedBase64}
-              className="w-full sm:flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/30 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
+              className="w-full sm:flex-1 py-3 bg-zinc-600 hover:bg-zinc-500 border border-zinc-500/30 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-zinc-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
             >
               <FileSearch className="w-4 h-4" />
               {isAnalyzing ? 'Анализ скриншота...' : 'Проанализировать скриншот'}
@@ -1114,12 +1114,12 @@ export default function PardonCalculatorView() {
                 placeholder="Вставьте текст или список статей..."
                 value={manualText}
                 onChange={e => setManualText(e.target.value)}
-                className="w-full bg-black/60 border border-white/15 rounded-xl p-3 text-xs font-mono text-white focus:border-indigo-500/50 focus:outline-none leading-relaxed"
+                className="w-full bg-black/60 border border-white/15 rounded-xl p-3 text-xs font-mono text-white focus:border-zinc-500/50 focus:outline-none leading-relaxed"
               />
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => parseTextToRows(manualText)}
-                  className="px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-xs font-bold rounded-xl border border-indigo-500/30 transition-all cursor-pointer"
+                  className="px-4 py-2 bg-zinc-500/20 hover:bg-zinc-500/30 text-zinc-300 text-xs font-bold rounded-xl border border-zinc-500/30 transition-all cursor-pointer"
                 >
                   Разобрать текст
                 </button>
@@ -1128,7 +1128,7 @@ export default function PardonCalculatorView() {
                   onClick={handleAddManualRow}
                   className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl border border-white/15 transition-all cursor-pointer flex items-center gap-1.5"
                 >
-                  <Plus className="w-3.5 h-3.5 text-indigo-400" /> Добавить статью вручную
+                  <Plus className="w-3.5 h-3.5 text-zinc-400" /> Добавить статью вручную
                 </button>
               </div>
             </div>
@@ -1137,11 +1137,11 @@ export default function PardonCalculatorView() {
       </div>
 
       {/* ARTICLES IN CONVICTION TABLE CARD */}
-      <div className="bg-[#121218]/90 border border-white/10 rounded-3xl p-6 lg:p-8 space-y-6 shadow-2xl backdrop-blur-xl">
+      <div className="bg-black/50 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 lg:p-8 space-y-6 shadow-2xl backdrop-blur-xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div>
             <h2 className="text-base font-bold text-white flex items-center gap-2.5">
-              <FileText className="w-5 h-5 text-indigo-400" />
+              <FileText className="w-5 h-5 text-zinc-400" />
               Статьи в судимости
             </h2>
             <p className="text-xs text-white/50 mt-0.5">
@@ -1151,7 +1151,7 @@ export default function PardonCalculatorView() {
 
           <button
             onClick={handleAddManualRow}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-xs font-bold rounded-xl border border-indigo-500/30 transition-all cursor-pointer shadow-md"
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-500/20 hover:bg-zinc-500/30 text-zinc-300 text-xs font-bold rounded-xl border border-zinc-500/30 transition-all cursor-pointer shadow-md"
           >
             <Plus className="w-4 h-4" /> Добавить статью
           </button>
@@ -1180,12 +1180,12 @@ export default function PardonCalculatorView() {
                 </tr>
               ) : (
                 rowCalculations.map(row => (
-                  <tr key={row.id} className={row.isBlocked ? 'bg-rose-500/[0.04]' : 'hover:bg-white/[0.02]'}>
+                  <tr key={row.id} className={row.isBlocked ? 'bg-zinc-500/[0.04]' : 'hover:bg-white/[0.03] backdrop-blur-2xl'}>
                     {/* Delete */}
                     <td className="py-3 px-3 text-center">
                       <button
                         onClick={() => handleRemoveRow(row.id)}
-                        className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-zinc-400 hover:text-zinc-300 hover:bg-zinc-500/10 rounded-lg transition-colors cursor-pointer"
                         title="Удалить статью"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1199,7 +1199,7 @@ export default function PardonCalculatorView() {
                         value={row.code}
                         onChange={e => handleUpdateRow(row.id, 'code', e.target.value)}
                         placeholder="Статья (напр. 12.8)"
-                        className="bg-black/60 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold w-36 focus:border-indigo-500/50 focus:outline-none"
+                        className="bg-black/60 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold w-36 focus:border-zinc-500/50 focus:outline-none"
                       />
                     </td>
 
@@ -1210,7 +1210,7 @@ export default function PardonCalculatorView() {
                         value={row.date}
                         onChange={e => handleUpdateRow(row.id, 'date', e.target.value)}
                         placeholder="ДД.ММ.ГГГГ"
-                        className="bg-black/60 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white w-28 focus:border-indigo-500/50 focus:outline-none"
+                        className="bg-black/60 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white w-28 focus:border-zinc-500/50 focus:outline-none"
                       />
                     </td>
 
@@ -1221,7 +1221,7 @@ export default function PardonCalculatorView() {
                         value={row.time}
                         onChange={e => handleUpdateRow(row.id, 'time', e.target.value)}
                         placeholder="ЧЧ:ММ"
-                        className="bg-black/60 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono w-20 focus:border-indigo-500/50 focus:outline-none"
+                        className="bg-black/60 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono w-20 focus:border-zinc-500/50 focus:outline-none"
                       />
                     </td>
 
@@ -1239,7 +1239,7 @@ export default function PardonCalculatorView() {
                     </td>
 
                     {/* Fee Price */}
-                    <td className="py-3 px-3 font-mono font-bold text-emerald-400">
+                    <td className="py-3 px-3 font-mono font-bold text-zinc-400">
                       {row.price ? `${row.price.toLocaleString('ru-RU')}$` : '—'}
                     </td>
 
@@ -1247,8 +1247,8 @@ export default function PardonCalculatorView() {
                     <td className="py-3 px-3">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${
                         row.isBlocked 
-                          ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30' 
-                          : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                          ? 'bg-zinc-500/15 text-zinc-300 border border-zinc-500/30' 
+                          : 'bg-zinc-500/15 text-zinc-300 border border-zinc-500/30'
                       }`}>
                         {row.statusText}
                       </span>
@@ -1262,10 +1262,10 @@ export default function PardonCalculatorView() {
       </div>
 
       {/* SUMMARY & REPORT CARD */}
-      <div className="bg-[#121218]/90 border border-white/10 rounded-3xl p-6 lg:p-8 space-y-6 shadow-2xl backdrop-blur-xl">
+      <div className="bg-black/50 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 lg:p-8 space-y-6 shadow-2xl backdrop-blur-xl">
         <div className="border-b border-white/10 pb-4">
           <h2 className="text-base font-bold text-white flex items-center gap-2.5">
-            <DollarSign className="w-5 h-5 text-indigo-400" />
+            <DollarSign className="w-5 h-5 text-zinc-400" />
             Расчёт пошлины и Финансовый итог
           </h2>
           <p className="text-xs text-white/50 mt-0.5">Распределение средств между Казной и Пошлиной</p>
@@ -1278,25 +1278,25 @@ export default function PardonCalculatorView() {
             <div className="text-2xl font-extrabold text-white font-mono">{rawSum.toLocaleString('ru-RU')}$</div>
           </div>
 
-          <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-5 space-y-1 relative overflow-hidden shadow-xl">
-            <span className="text-[11px] uppercase font-extrabold text-indigo-300">Текущее помилование</span>
-            <div className="text-2xl font-extrabold text-emerald-400 font-mono">{finalSum.toLocaleString('ru-RU')}$</div>
+          <div className="bg-zinc-500/10 border border-zinc-500/20 rounded-2xl p-5 space-y-1 relative overflow-hidden shadow-xl">
+            <span className="text-[11px] uppercase font-extrabold text-zinc-300">Текущее помилование</span>
+            <div className="text-2xl font-extrabold text-zinc-400 font-mono">{finalSum.toLocaleString('ru-RU')}$</div>
             {prevDebtNum + rawSum > TOTAL_CAP && (
-              <p className="text-[10px] text-rose-300 font-bold mt-1">
+              <p className="text-[10px] text-zinc-300 font-bold mt-1">
                 ⚠ Превышен лимит $170k за 24ч — сумма срезана.
               </p>
             )}
           </div>
 
-          <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-5 space-y-1 shadow-xl">
+          <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/[0.07] rounded-2xl p-5 space-y-1 shadow-xl">
             <span className="text-[11px] uppercase font-extrabold text-zinc-300">Общая сумма за сутки долга</span>
-            <div className="text-2xl font-extrabold text-indigo-300 font-mono">{totalDailyDebt.toLocaleString('ru-RU')}$</div>
+            <div className="text-2xl font-extrabold text-zinc-300 font-mono">{totalDailyDebt.toLocaleString('ru-RU')}$</div>
             <p className="text-[10px] text-zinc-500 font-mono font-bold">Прошлое + Нынешнее</p>
           </div>
 
           <div className="bg-black/40 border border-white/10 rounded-2xl p-5 space-y-1">
             <span className="text-[11px] uppercase font-bold text-white/40">Учтено статей</span>
-            <div className="text-2xl font-extrabold text-emerald-400 font-mono">{countOk}</div>
+            <div className="text-2xl font-extrabold text-zinc-400 font-mono">{countOk}</div>
           </div>
         </div>
 
@@ -1308,22 +1308,22 @@ export default function PardonCalculatorView() {
               <span className="text-xl font-extrabold text-white font-mono mt-1 block">{treasurySum.toLocaleString('ru-RU')}$</span>
               <span className="text-[10px] text-zinc-400 font-mono mt-0.5 block">85% исчисляется от общей суммы долга за сутки (${totalDailyDebt.toLocaleString('ru-RU')})</span>
             </div>
-            <Building className="w-8 h-8 text-indigo-400/40" />
+            <Building className="w-8 h-8 text-zinc-400/40" />
           </div>
 
           <div className="bg-black/40 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-xl">
             <div>
               <span className="text-xs font-bold text-white/50 uppercase tracking-wider block">Себе (15% от суточного долга)</span>
-              <span className="text-xl font-extrabold text-indigo-300 font-mono mt-1 block">{selfSum.toLocaleString('ru-RU')}$</span>
+              <span className="text-xl font-extrabold text-zinc-300 font-mono mt-1 block">{selfSum.toLocaleString('ru-RU')}$</span>
               <span className="text-[10px] text-zinc-400 font-mono mt-0.5 block">15% исчисляется от общей суммы долга за сутки (${totalDailyDebt.toLocaleString('ru-RU')})</span>
             </div>
-            <Award className="w-8 h-8 text-indigo-400/40" />
+            <Award className="w-8 h-8 text-zinc-400/40" />
           </div>
         </div>
 
         {/* Report Text Output */}
         <div className="space-y-3 pt-2">
-          <label className="text-xs font-extrabold text-indigo-300 uppercase tracking-wider block">
+          <label className="text-xs font-extrabold text-zinc-300 uppercase tracking-wider block">
             Сформированный отчёт по обращению
           </label>
           <div className="bg-black/60 border border-white/15 rounded-2xl p-4 text-xs font-mono text-zinc-200 whitespace-pre-line leading-relaxed shadow-inner">
@@ -1333,7 +1333,7 @@ export default function PardonCalculatorView() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleCopyReport}
-              className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/30 text-white font-extrabold text-xs rounded-xl shadow-xl shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              className="flex-1 py-3 bg-zinc-600 hover:bg-zinc-500 border border-zinc-500/30 text-white font-extrabold text-xs rounded-xl shadow-xl shadow-zinc-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
               {copiedReport ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               {copiedReport ? 'Отчёт скопирован!' : 'Скопировать отчёт'}
