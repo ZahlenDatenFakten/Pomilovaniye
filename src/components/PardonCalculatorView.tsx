@@ -383,7 +383,7 @@ export default function PardonCalculatorView() {
     }
   };
 
-  // Groq Vision AI Engine (Highly explicit prompt for 100% article & citizen extraction accuracy)
+  // Groq Vision AI Engine (Explicit prompt for 100% article & citizen extraction accuracy)
   const doGroqAnalysis = async (): Promise<string | null> => {
     if (!apiKey.trim()) {
       setStatusMessage('Введите API-ключ Groq в настройках');
@@ -407,7 +407,7 @@ export default function PardonCalculatorView() {
 КРИТИЧЕСКИЕ ПРАВИЛА ИЗВЛЕЧЕНИЯ:
 1. ИМЯ И ПАСПОРТ ГРАЖДАНИНА (Кому делается помилование):
    - Ищи Имя_Фамилия СТРОГО внутри темно-синей карточки базы данных database.gov.
-   - Имя гражданина написано возле аватарки персонажа прямо над надписью "Паспорт #XXXXXX".
+   - Имя гражданина написано возле аватарки персонажа прямо над надписью "Паспорт #XXXXXX" (например: Danek_Fillin, Dazai_Has, Misha_Navarov).
    - КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО брать имя из верхнего правого угла экрана (оверлей игры с ником игрока/губернатора), а также из колонок "ПРОВОДИЛ АРЕСТ"!
    - Номер паспорта находится под именем в формате "Паспорт #XXXXXX" или в поле "Номер паспорта" слева.
    - Формат ответа имени: Имя_Фамилия (через подчеркивание).
@@ -416,23 +416,12 @@ export default function PardonCalculatorView() {
    - Внимательно просмотри КАЖДУЮ строку таблицы (колонки "ДАТА", "СТАТЬЯ", "ПРОВОДИЛ АРЕСТ").
    - Извлеки время, дату и ВСЕ коды статей (например: 17.6, 12.7, 15.6, 17.1).
    - Если в одной ячейке или строке указано несколько статей (например '15.6, 17.1, 12.8'), выведи КАЖДУЮ статью отдельной строкой.
+   - НЕ пропускай ни одной статьи!
 
-Верни результат СТРОГО в формате валидного JSON объекта.
-Сначала добавь поле "_thinking", где ты кратко рассуждаешь, где находится нужное имя (отбрасывая имена полицейских) и где находятся статьи.
-Затем добавь поле "name" (строка, Имя_Фамилия).
-Поле "passport" (строка, номер).
-Поле "articles" - массив объектов с полями "date" (ДД.ММ.ГГГГ), "time" (ЧЧ:ММ) и "code" (например "12.8").
-
-Пример JSON:
-{
-  "_thinking": "Имя находится над аватаркой, это Ivan_Ivanov. Полицейский - John_Doe, его игнорирую. Статьи в таблице: 17.6 и 12.8...",
-  "name": "Ivan_Ivanov",
-  "passport": "12345",
-  "articles": [
-    { "date": "12.08.2023", "time": "12:30", "code": "17.6" },
-    { "date": "12.08.2023", "time": "12:30", "code": "12.8" }
-  ]
-}`;
+Верни результат СТРОГО в следующем формате без кавычек и без дополнительных комментариев:
+ФИО: Имя_Фамилия | номер_паспорта
+ЧЧ:ММ ДД.ММ.ГГГГ\tкод_статьи
+ЧЧ:ММ ДД.ММ.ГГГГ\tкод_статьи`;
 
     try {
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -443,7 +432,6 @@ export default function PardonCalculatorView() {
         },
         body: JSON.stringify({
           model: 'llama-3.2-90b-vision-preview',
-          response_format: { type: "json_object" },
           messages: [{
             role: 'user',
             content: [
@@ -467,27 +455,7 @@ export default function PardonCalculatorView() {
       setDebugLogText(`Groq ответ:\n${raw.substring(0, 1500)}`);
       setShowDebug(true);
 
-      let parsed;
-      try {
-        const jsonMatch = raw.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          parsed = JSON.parse(jsonMatch[0]);
-        } else {
-          parsed = JSON.parse(raw);
-        }
-      } catch (e) {
-        return raw; // Fallback to raw text
-      }
-
-      // Reconstruct text for parseTextToRows
-      let reconstructed = `ФИО: ${parsed.name || ''} | ${parsed.passport || ''}\n`;
-      if (parsed.articles && Array.isArray(parsed.articles)) {
-        parsed.articles.forEach((art: any) => {
-          reconstructed += `${art.time || ''} ${art.date || ''}\t${art.code || ''}\n`;
-        });
-      }
-
-      return reconstructed;
+      return raw;
     } catch (err: any) {
       setStatusMessage(`Ошибка Groq: ${err.message}`);
       setStatusColor('red');
@@ -536,83 +504,145 @@ export default function PardonCalculatorView() {
     const linesForOfficers = rawText.split('\n');
     linesForOfficers.forEach(l => {
       if (/проводил\s*арест|напарник|lspd|fib|usss|shpd|lscsd|sasp/i.test(l)) {
-        const m = l.match(/\b([A-Z][a-z0-9]{1,15}[_\s]+[A-Z][a-z0-9]{1,20})\b/g);
-        if (m) m.forEach(off => arrestingOfficers.add(off.toLowerCase().replace(/\s+/, '_')));
+        const m = l.match(/\b([A-ZА-ЯЁa-zа-яё0-9]{1,15}[_\s]+[A-ZА-ЯЁa-zа-яё0-9]{1,20})\b/g);
+        if (m) m.forEach(off => arrestingOfficers.add(off.toLowerCase().replace(/[\s\.]+/, '_')));
       }
     });
 
-    // 2. ULTRA-ROBUST EXTRACT LOGIC
-    let text = rawText;
-    text = text.replace(/(\d{1,2}[.,:]\d{1,2}(?:[.,:]\d{2,4})?)/g, ' $1 ');
-    text = text.replace(/[:;.,!?|\\/(){}\[\]<>+="\-'`~#№]/g, ' $& ');
-    const safeKeywords = [
-        'фио', 'паспорт', 'фамилия', 'уровень', 'мужской', 'женский', 
-        'гражданство', 'прописка', 'организация', 'должность', 
-        'passport', 'surname', 'статья', 'розыск', 'штраф', 'наличные'
-    ];
-    const safeRegex = new RegExp(`(${safeKeywords.join('|')})`, 'gi');
-    text = text.replace(safeRegex, ' $1 ');
-    text = text.replace(/\s+_\s+|\s+_|_\s+/g, '_');
-    text = text.replace(/\s+/g, ' ').trim();
-
+    // 2. EXTRACT PASSPORT NUMBER
     let foundPass = '';
-    const passportRegex = /(?:Паспорт|ID|#|№)\s*[:\-]?\s*(\d{2,8})/i;
-    const passportMatch = text.match(passportRegex);
-    if (passportMatch) {
-      foundPass = passportMatch[1];
-    } else {
-      const rawPassportMatch = rawText.match(/(?:Паспорт|ID|#|№)[^\d]*(\d{2,8})/i);
-      if (rawPassportMatch) {
-        foundPass = rawPassportMatch[1];
-      } else {
-        const digitsMatch = text.match(/\b(\d{4,8})\b/);
-        if (digitsMatch) {
-          foundPass = digitsMatch[1];
+    const passHeaderMatch = rawText.match(/Паспорт\s*#?\s*(\d{4,8})/i) || rawText.match(/\b(\d{5,7})\b/);
+    if (passHeaderMatch) {
+      foundPass = passHeaderMatch[1].trim();
+    }
+
+    // Helper for validating candidate names
+    const isCitizenName = (candidate: string): boolean => {
+      if (!candidate) return false;
+      const clean = candidate.trim().replace(/[\s\.]+/, '_');
+      if (clean.length < 4) return false;
+      if (!/[a-zA-Zа-яА-ЯёЁ]/.test(clean)) return false;
+      const norm = clean.toLowerCase();
+      if (arrestingOfficers.has(norm)) return false;
+      if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор|паспорт|гражданин|досье)(?:_|$)/i.test(norm)) return false;
+      return true;
+    };
+
+    // Helper for formatting name with OCR corrections
+    const formatCandidate = (raw: string): string => {
+      if (!raw) return '';
+      let clean = raw.trim().replace(/[\s\.]+/g, '_');
+      // Strip common prefixes / suffixes
+      clean = clean.replace(/^(?:ФИО|Имя|Паспорт|Пол|ID|Name|Passport)(?=[A-ZА-ЯЁ])/g, '');
+      clean = clean.replace(/^(?:фио|имя|паспорт|пол)(?=[A-Za-z])/i, '');
+      clean = clean.replace(/^(?:id|name|passport)(?=[А-Яа-яЁё])/i, '');
+      clean = clean.replace(/(?<=[a-zA-Z])(?:лет|муж|жен)$/i, '');
+      clean = clean.replace(/(?<=[а-яА-ЯёЁ])(?:lvl|age)$/i, '');
+      clean = clean.replace(/([a-zа-яё])(?:Лет|Муж|Жен|Lvl|Age)$/, '$1');
+      clean = clean.replace(/\d{2,}$/, '');
+      clean = clean.replace(/^\d{2,}/, '');
+
+      const parts = clean.split('_').filter(Boolean);
+      const mainParts = parts.length > 2 ? [parts[0], parts[1]] : parts;
+      
+      return mainParts.map(part => {
+        if (!part) return '';
+        const isCyrillic = /[а-яА-ЯёЁ]/.test(part);
+        let corrected = part;
+        if (isCyrillic) {
+          corrected = corrected
+            .replace(/0/g, 'о')
+            .replace(/1/g, 'и')
+            .replace(/3/g, 'е')
+            .replace(/4/g, 'а')
+            .replace(/6/g, 'б')
+            .replace(/8/g, 'в');
+        } else {
+          corrected = corrected
+            .replace(/0/g, 'o')
+            .replace(/1/g, 'i')
+            .replace(/3/g, 'e')
+            .replace(/4/g, 'a')
+            .replace(/5/g, 's')
+            .replace(/7/g, 't')
+            .replace(/8/g, 'b');
+        }
+        const lower = corrected.toLowerCase();
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+      }).join('_');
+    };
+
+    // 3. MULTI-TIER STRATEGIES TO EXTRACT CITIZEN NAME
+    let foundName = '';
+
+    // Strategy A: Explicit line from Groq Prompt / Format ("ФИО: Имя_Фамилия | Паспорт")
+    const fioFormatMatch = rawText.match(/ФИО:\s*([A-Za-zА-Яа-я0-9_\-\.\s]{3,40})(?:\s*\|\s*(\d{4,8}))?/i);
+    if (fioFormatMatch) {
+      const cand = fioFormatMatch[1].trim();
+      if (isCitizenName(cand)) {
+        foundName = formatCandidate(cand);
+        if (!foundPass && fioFormatMatch[2]) foundPass = fioFormatMatch[2].trim();
+      }
+    }
+
+    // Strategy B: Name adjacent to "Паспорт #" in dossier card (Right above, below, or glued)
+    if (!foundName) {
+      const nearPassPatterns = [
+        // Name directly before "Паспорт #123456"
+        /([A-ZА-Яa-zа-я0-9]{2,20}[_\s]+[A-ZА-Яa-zа-я0-9]{2,20})[\r\n\s]*Паспорт\s*#?\s*(\d{4,8})/i,
+        // "Паспорт #123456" directly before Name
+        /Паспорт\s*#?\s*(\d{4,8})[\r\n\s]*([A-ZА-Яa-zа-я0-9]{2,20}[_\s]+[A-ZА-Яa-zа-я0-9]{2,20})/i,
+        // Glued: "Misha_NavarovПаспорт #590831"
+        /([A-ZА-Яa-zа-я0-9]{2,20}_[A-ZА-Яa-zа-я0-9]{2,20})Паспорт/i
+      ];
+
+      for (const pattern of nearPassPatterns) {
+        const m = rawText.match(pattern);
+        if (m) {
+          const candidate = (m[1] && isNaN(Number(m[1]))) ? m[1] : m[2];
+          if (candidate && isCitizenName(candidate)) {
+            foundName = formatCandidate(candidate);
+            const passCand = (m[1] && !isNaN(Number(m[1]))) ? m[1] : m[2];
+            if (!foundPass && passCand && !isNaN(Number(passCand))) foundPass = passCand;
+            break;
+          }
         }
       }
     }
 
-    let foundName = '';
-    const nameRegex = /([a-zA-Zа-яА-ЯёЁ0-9]+_[a-zA-Zа-яА-ЯёЁ0-9]+)/g;
-    let matches: string[] = [];
-    let match;
-    
-    while ((match = nameRegex.exec(text)) !== null) {
-      matches.push(match[1]);
-    }
-
-    if (matches.length === 0) {
-      while ((match = nameRegex.exec(rawText)) !== null) {
-        matches.push(match[1]);
+    // Strategy C: Contextual window around Passport position (within 350 chars)
+    if (!foundName && foundPass) {
+      const passPos = rawText.indexOf(foundPass);
+      if (passPos !== -1) {
+        const focusSnippet = rawText.slice(Math.max(0, passPos - 350), Math.min(rawText.length, passPos + 350));
+        const nameRegex = /([A-ZА-Яa-zа-я0-9]{2,20}[_\s]+[A-ZА-Яa-zа-я0-9]{2,20})/g;
+        let m;
+        while ((m = nameRegex.exec(focusSnippet)) !== null) {
+          if (isCitizenName(m[1])) {
+            foundName = formatCandidate(m[1]);
+            break;
+          }
+        }
       }
     }
 
-    if (matches.length > 0) {
-      const validName = matches.find(m => {
-        if (!/[a-zA-Zа-яА-ЯёЁ]/.test(m)) return false;
-        const norm = m.toLowerCase();
-        if (arrestingOfficers.has(norm)) return false;
-        if (/database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff/i.test(m)) return false;
-        return true;
-      }) || matches[0];
-      
-      foundName = validName;
+    // Strategy D: Global pattern search with fuzzy word separation
+    if (!foundName) {
+      let text = rawText
+        .replace(/(\d{1,2}[.,:]\d{1,2}(?:[.,:]\d{2,4})?)/g, ' $1 ')
+        .replace(/[:;.,!?|\\/(){}\[\]<>+="\-'`~#№]/g, ' $& ')
+        .replace(/(фио|паспорт|фамилия|уровень|мужской|женский|гражданство|прописка|организация|должность|passport|surname|статья|розыск|штраф|наличные)/gi, ' $1 ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
-      foundName = foundName.replace(/^(?:имя|и|пол|фио|пасп)(?=[A-ZА-ЯЁ]|[a-zA-Z])/i, '');
-      foundName = foundName.replace(/^(?:id|name|age|sex)(?=[A-ZА-ЯЁ]|[а-яА-ЯёЁ])/i, '');
-
-      foundName = foundName.replace(/(?<=[a-zA-Z])(?:лет|муж|жен)$/i, '');
-      foundName = foundName.replace(/(?<=[а-яА-ЯёЁ])(?:lvl|age)$/i, '');
-      foundName = foundName.replace(/([a-zа-яё])(?:Лет|Муж|Жен|Lvl|Age)$/, '$1');
-
-      foundName = foundName.replace(/\d{2,}$/, '');
-      foundName = foundName.replace(/^\d{2,}/, '');
-
-      foundName = foundName.split('_').map(part => {
-        if (!part) return '';
-        let lower = part.toLowerCase();
-        return lower.charAt(0).toUpperCase() + lower.slice(1);
-      }).join('_');
+      const globalRegex = /([a-zA-Zа-яА-ЯёЁ0-9]{2,20}(?:_[a-zA-Zа-яА-ЯёЁ0-9]{2,20}|\s+[a-zA-Zа-яА-ЯёЁ0-9]{2,20}))/g;
+      let m;
+      while ((m = globalRegex.exec(text)) !== null) {
+        if (isCitizenName(m[1])) {
+          foundName = formatCandidate(m[1]);
+          break;
+        }
+      }
     }
 
     if (foundName) setFio(foundName);
