@@ -508,79 +508,78 @@ export default function PardonCalculatorView() {
       }
     });
 
-    // 2. EXTRACT PASSPORT NUMBER
+    // 2. ULTRA-ROBUST EXTRACT LOGIC
+    let text = rawText;
+    text = text.replace(/(\d{1,2}[.,:]\d{1,2}(?:[.,:]\d{2,4})?)/g, ' $1 ');
+    text = text.replace(/[:;.,!?|\\/(){}\[\]<>+="\-'`~#№]/g, ' $& ');
+    const safeKeywords = [
+        'фио', 'паспорт', 'фамилия', 'уровень', 'мужской', 'женский', 
+        'гражданство', 'прописка', 'организация', 'должность', 
+        'passport', 'surname', 'статья', 'розыск', 'штраф', 'наличные'
+    ];
+    const safeRegex = new RegExp(`(${safeKeywords.join('|')})`, 'gi');
+    text = text.replace(safeRegex, ' $1 ');
+    text = text.replace(/\s+_\s+|\s+_|_\s+/g, '_');
+    text = text.replace(/\s+/g, ' ').trim();
+
     let foundPass = '';
-    const passHeaderMatch = rawText.match(/Паспорт\s*#?\s*(\d{4,8})/i) || rawText.match(/\b(\d{5,7})\b/);
-    if (passHeaderMatch) {
-      foundPass = passHeaderMatch[1].trim();
-    }
-
-    // PRE-PROCESS TEXT: Tesseract often misses spaces. Inject spaces around keywords so regex doesn't fail due to glued words.
-    rawText = rawText.replace(/Паспорт/ig, ' Паспорт ');
-    rawText = rawText.replace(/ФИО:/ig, 'ФИО: ');
-
-    // 3. EXTRACT TARGET CITIZEN NAME
-    let foundName = '';
-
-    // Strategy A: Explicit line from Groq Prompt
-    // Updated regex to include spaces, dots, and numbers (in case of OCR substitutions like O->0)
-    const fioFormatMatch = rawText.match(/ФИО:\s*([A-Za-zА-Яа-я0-9_\-\.\s]{3,40})(?:\s*\|\s*(\d{4,8}))?/i);
-    if (fioFormatMatch) {
-      foundName = fioFormatMatch[1].trim();
-      if (!foundPass && fioFormatMatch[2]) foundPass = fioFormatMatch[2].trim();
-    }
-
-    // Strategy B: Name adjacent to "Паспорт #" inside profile card
-    if (!foundName) {
-      const nearPassMatch = rawText.match(/([A-ZА-Яa-zа-я0-9]{2,20}[_\s]+[A-ZА-Яa-zа-я0-9]{2,20})[\r\n\s]*Паспорт\s*#?\s*(\d{4,8})/i) ||
-                            rawText.match(/Паспорт\s*#?\s*(\d{4,8})[\r\n\s]*([A-ZА-Яa-zа-я0-9]{2,20}[_\s]+[A-ZА-Яa-zа-я0-9]{2,20})/i);
-      if (nearPassMatch) {
-        const potentialName = (nearPassMatch[1] && isNaN(Number(nearPassMatch[1])) ? nearPassMatch[1] : nearPassMatch[2]).trim().replace(/\s+/, '_');
-        const normPot = potentialName.toLowerCase();
-        if (!arrestingOfficers.has(normPot) && !/database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|police|sheriff/i.test(potentialName)) {
-          foundName = potentialName;
+    const passportRegex = /(?:Паспорт|ID|#|№)\s*[:\-]?\s*(\d{2,8})/i;
+    const passportMatch = text.match(passportRegex);
+    if (passportMatch) {
+      foundPass = passportMatch[1];
+    } else {
+      const rawPassportMatch = rawText.match(/(?:Паспорт|ID|#|№)[^\d]*(\d{2,8})/i);
+      if (rawPassportMatch) {
+        foundPass = rawPassportMatch[1];
+      } else {
+        const digitsMatch = text.match(/\b(\d{4,8})\b/);
+        if (digitsMatch) {
+          foundPass = digitsMatch[1];
         }
       }
     }
 
-    // Strategy C: Search snippet around Passport position and global regex
-    if (!foundName) {
-      const passPos = foundPass ? rawText.indexOf(foundPass) : -1;
-      const focusSnippet = passPos !== -1 ? rawText.slice(Math.max(0, passPos - 350), passPos + 100) : rawText;
-
-      const nameRegex = /(?:^|[^A-ZА-Яa-zа-я_\-])([A-ZА-Яa-zа-я]{2,20}[_\s]+[A-ZА-Яa-zа-я]{2,20})(?=$|[^A-ZА-Яa-zа-я_\-])/gi;
-      const getMatches = (text) => {
-          const matches = [];
-          let m;
-          while ((m = nameRegex.exec(text)) !== null) {
-              matches.push(m[1]);
-          }
-          return matches;
-      };
-
-      const nameMatchList = [...getMatches(focusSnippet), ...getMatches(rawText)];
-
-      const validName = nameMatchList.find(n => {
-        const norm = n.toLowerCase();
-        return !arrestingOfficers.has(norm.replace(/\s+/, '_')) && !/database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff/i.test(n);
-      });
-
-      if (validName) foundName = validName;
+    let foundName = '';
+    const nameRegex = /([a-zA-Zа-яА-ЯёЁ0-9]+_[a-zA-Zа-яА-ЯёЁ0-9]+)/g;
+    let matches: string[] = [];
+    let match;
+    
+    while ((match = nameRegex.exec(text)) !== null) {
+      matches.push(match[1]);
     }
 
-    // Format foundName nicely with proper Capitalization and Underscore
-    if (foundName) {
-      // Normalize to First_Last format securely
-      foundName = foundName.replace(/[\s\.]+/g, '_');
-      let parts = foundName.split('_');
-      let first = parts[0] || '';
-      let last = parts[1] || '';
+    if (matches.length === 0) {
+      while ((match = nameRegex.exec(rawText)) !== null) {
+        matches.push(match[1]);
+      }
+    }
+
+    if (matches.length > 0) {
+      const validName = matches.find(m => {
+        if (!/[a-zA-Zа-яА-ЯёЁ]/.test(m)) return false;
+        const norm = m.toLowerCase();
+        if (arrestingOfficers.has(norm)) return false;
+        if (/database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff/i.test(m)) return false;
+        return true;
+      }) || matches[0];
       
-      // Capitalize properly
-      if (first) first = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
-      if (last) last = last.charAt(0).toUpperCase() + last.slice(1).toLowerCase();
-      
-      foundName = last ? `${first}_${last}` : first;
+      foundName = validName;
+
+      foundName = foundName.replace(/^(?:имя|и|пол|фио|пасп)(?=[A-ZА-ЯЁ]|[a-zA-Z])/i, '');
+      foundName = foundName.replace(/^(?:id|name|age|sex)(?=[A-ZА-ЯЁ]|[а-яА-ЯёЁ])/i, '');
+
+      foundName = foundName.replace(/(?<=[a-zA-Z])(?:лет|муж|жен)$/i, '');
+      foundName = foundName.replace(/(?<=[а-яА-ЯёЁ])(?:lvl|age)$/i, '');
+      foundName = foundName.replace(/([a-zа-яё])(?:Лет|Муж|Жен|Lvl|Age)$/, '$1');
+
+      foundName = foundName.replace(/\d{2,}$/, '');
+      foundName = foundName.replace(/^\d{2,}/, '');
+
+      foundName = foundName.split('_').map(part => {
+        if (!part) return '';
+        let lower = part.toLowerCase();
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+      }).join('_');
     }
 
     if (foundName) setFio(foundName);
