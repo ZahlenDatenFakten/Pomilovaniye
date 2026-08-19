@@ -265,7 +265,7 @@ export default function PardonCalculatorView() {
   };
 
   // Image Preprocessing Helper for High-Contrast Clean OCR & HUD Masking
-  const preprocessCanvasForOcr = (dataUrl: string, maskHud = true): Promise<string> => {
+  const preprocessCanvasForOcr = (dataUrl: string, isTesseract = true): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -281,31 +281,39 @@ export default function PardonCalculatorView() {
 
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        if (maskHud) {
-          // Mask out top 7.5% HUD overlay (completely removes player watermark "Jorno Vegas ID 581" at top right)
-          ctx.fillStyle = '#090b10';
-          ctx.fillRect(0, 0, canvas.width, Math.round(canvas.height * 0.075));
+        // Mask out top 7.5% HUD overlay (completely removes player watermark "Jorno Vegas ID 581" at top right)
+        ctx.fillStyle = '#090b10';
+        ctx.fillRect(0, 0, canvas.width, Math.round(canvas.height * 0.075));
+
+        if (isTesseract) {
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imgData.data;
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            // Grayscale
+            let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+            
+            // Invert colors: white text becomes black, dark background becomes white. OCR heavily prefers black-on-white.
+            gray = 255 - gray;
+
+            // Apply proper mathematical contrast boost (0-255 scale)
+            const contrast = 128;
+            let factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+            let newValue = factor * (gray - 128) + 128;
+            newValue = Math.max(0, Math.min(255, newValue));
+
+            data[i] = newValue;
+            data[i + 1] = newValue;
+            data[i + 2] = newValue;
+          }
+
+          ctx.putImageData(imgData, 0, 0);
         }
-
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imgData.data;
-
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-          const contrast = 1.35;
-          let factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-          let newValue = factor * (gray - 128) + 128;
-          newValue = Math.max(0, Math.min(255, newValue));
-
-          data[i] = newValue;
-          data[i + 1] = newValue;
-          data[i + 2] = newValue;
-        }
-
-        ctx.putImageData(imgData, 0, 0);
+        
         resolve(canvas.toDataURL('image/png'));
       };
       img.onerror = () => resolve(dataUrl);
@@ -388,10 +396,10 @@ export default function PardonCalculatorView() {
       return null;
     }
 
-    setStatusMessage('Подготовка скриншота и анализ через Groq Vision API...');
+    setStatusMessage('Подготовка скриншота и анализ через AI Vision...');
 
     const rawDataUrl = `data:${uploadedMime};base64,${uploadedBase64}`;
-    const preprocessedUrl = await preprocessCanvasForOcr(rawDataUrl, true);
+    const preprocessedUrl = await preprocessCanvasForOcr(rawDataUrl, false);
 
     const prompt = `Ты высокоточный эксперт по анализу судебных документов базы данных правонарушителей (database.gov / GTA5RP).
 Внимательно изучи всё изображение базы данных.
