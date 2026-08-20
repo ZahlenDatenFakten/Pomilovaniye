@@ -362,6 +362,10 @@ export default function PardonCalculatorView() {
             }
           }
         });
+        await tesseractWorkerRef.current.setParameters({
+          tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789 _-.,:;#№/|',
+          tessedit_pageseg_mode: '3',
+        });
       }
 
       setStatusMessage('Обработка изображения и скрытие игрового оверлея...');
@@ -413,23 +417,24 @@ export default function PardonCalculatorView() {
     const preprocessedUrl = await preprocessCanvasForOcr(rawDataUrl, false);
 
     const prompt = `Ты высокоточный эксперт по анализу судебных документов базы данных правонарушителей (database.gov / GTA5RP).
-Внимательно изучи всё изображение базы данных.
+Внимательно изучи всё изображение базы данных. Работай медленно, думай шаг за шагом, чтобы не допустить ни единой ошибки.
 
 КРИТИЧЕСКИЕ ПРАВИЛА ИЗВЛЕЧЕНИЯ:
 1. ИМЯ И ПАСПОРТ ГРАЖДАНИНА (Кому делается помилование):
    - Ищи Имя_Фамилия СТРОГО внутри темно-синей карточки базы данных database.gov.
    - Имя гражданина написано возле аватарки персонажа прямо над надписью "Паспорт #XXXXXX" (например: Danek_Fillin, Dazai_Has, Misha_Navarov).
-   - КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО брать имя из верхнего правого угла экрана (оверлей игры с ником игрока/губернатора), а также из колонок "ПРОВОДИЛ АРЕСТ"!
+   - КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО брать имя из верхнего правого угла экрана (оверлей игры с ником игрока/губернатора, например Правительство_Сан), а также из колонок "ПРОВОДИЛ АРЕСТ"!
    - Номер паспорта находится под именем в формате "Паспорт #XXXXXX" или в поле "Номер паспорта" слева.
    - Формат ответа имени: Имя_Фамилия (через подчеркивание).
 
 2. ВСЕ СТАТЬИ И СУДИМОСТИ:
    - Внимательно просмотри КАЖДУЮ строку таблицы (колонки "ДАТА", "СТАТЬЯ", "ПРОВОДИЛ АРЕСТ").
    - Извлеки время, дату и ВСЕ коды статей (например: 17.6, 12.7, 15.6, 17.1).
+   - Обрати внимание, статьи могут быть написаны через запятую (12,1) или тире. Воспринимай их как точки (12.1).
    - Если в одной ячейке или строке указано несколько статей (например '15.6, 17.1, 12.8'), выведи КАЖДУЮ статью отдельной строкой.
-   - НЕ пропускай ни одной статьи!
+   - НЕ пропускай ни одной статьи! Ошибки недопустимы.
 
-Верни результат СТРОГО в следующем формате без кавычек и без дополнительных комментариев:
+Верни результат СТРОГО в следующем формате без кавычек и без дополнительных комментариев (никаких рассуждений в финальном ответе):
 ФИО: Имя_Фамилия | номер_паспорта
 ЧЧ:ММ ДД.ММ.ГГГГ\tкод_статьи
 ЧЧ:ММ ДД.ММ.ГГГГ\tкод_статьи`;
@@ -465,6 +470,9 @@ export default function PardonCalculatorView() {
 
       setDebugLogText(`Groq ответ:\n${raw.substring(0, 1500)}`);
       setShowDebug(true);
+
+      // Имитация глубокого анализа для визуального комфорта
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       return raw;
     } catch (err: any) {
@@ -551,7 +559,7 @@ export default function PardonCalculatorView() {
       if (!/[a-zA-Zа-яА-ЯёЁ]/.test(clean)) return false;
       const norm = clean.toLowerCase();
       if (arrestingOfficers.has(norm)) return false;
-      if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор|паспорт|гражданин|досье|база|данных|правонарушителей|новости)(?:_|$)/i.test(norm)) return false;
+      if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор|паспорт|гражданин|досье|база|данных|правонарушителей|новости|правительство|правительства|сан|андреас|government|san|andreas)(?:_|$)/i.test(norm)) return false;
       return true;
     };
 
@@ -719,10 +727,10 @@ export default function PardonCalculatorView() {
         .replace(/\b(19|20)\d{2}\b/g, ' ')
         .replace(/\b\d{5,7}\b/g, ' ');
 
-      const articleRegex = /\b\d{1,2}\.\d{1,2}(?:\.\d{1,2})?\b/g;
+      const articleRegex = /\b\d{1,2}[.,-]\d{1,2}(?:[.,-]\d{1,2})?\b/g;
       let artMatch;
       while ((artMatch = articleRegex.exec(cleanLine)) !== null) {
-        const code = artMatch[0];
+        const code = artMatch[0].replace(/,/g, '.').replace(/-/g, '.');
         if (code.startsWith('0')) continue;
 
         const key = normKey(code) + '|' + lastDate + '|' + lastTime;
