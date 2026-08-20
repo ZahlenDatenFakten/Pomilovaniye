@@ -858,397 +858,301 @@ export default function PardonCalculatorView() {
   };
 
   return (
-    <div className="w-full space-y-8 font-sans pb-12">
-      {/* EXECUTIVE HEADER */}
-      <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/[0.07] rounded-2xl p-6 shadow-2xl shadow-black/60 backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-zinc-400 shrink-0">
-            <Award className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-                Офис Губернатора
-              </span>
-              <span className="text-zinc-600 text-xs">•</span>
-              <span className="text-xs text-zinc-400 font-medium">SA-GOV State Pardon Office</span>
-            </div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
-              Указ о Помиловании — Калькулятор Пошлины
-            </h1>
-          </div>
+    <div className="max-w-[1216px] mx-auto px-6 py-12 pb-24">
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-12">
+        <div className="flex items-center gap-2">
+          <Award className="w-6 h-6 text-[var(--color-copper)]" />
+          <span className="font-inter font-semibold text-[13px] text-[var(--color-copper)] uppercase tracking-[-0.26px]">Slash Pardon Calculator</span>
         </div>
-
         <button
           onClick={handleResetAll}
-          className="flex items-center gap-2 px-4 py-2 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white rounded-xl text-xs font-semibold border border-white/[0.08] transition-all cursor-pointer shadow-lg active:scale-95"
+          className="rounded-[9999px] border border-[var(--color-graphite)] text-[var(--color-bone)] text-[14px] font-medium px-4 py-2 hover:border-[var(--color-slate)] transition-colors cursor-pointer"
         >
-          <RefreshCw className="w-4 h-4 text-zinc-400" />
-          Очистить всё
+          Reset All
         </button>
       </div>
 
-      {/* TWO COLUMN CARDS: CONVICT & SCANNER */}
-      <div className="grid grid-cols-1 xl:grid-cols-[400px_1fr] gap-8 items-start">
-        {/* CARD 1: CONVICT INFORMATION */}
-        <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/[0.07] rounded-2xl p-6 space-y-6 shadow-2xl shadow-black/60 backdrop-blur-xl">
-          <div className="border-b border-white/[0.06] pb-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block mb-0.5">
-              Анкетные данные
-            </span>
-            <h2 className="text-base font-bold text-white flex items-center gap-2.5">
-              <UserCheck className="w-4 h-4 text-zinc-400" />
-              Данные Осуждённого
-            </h2>
-            <p className="text-xs text-zinc-400 mt-0.5">Ввод персональных данных для формирования указа</p>
-          </div>
-
-          <div className="space-y-4">
+      {/* HERO COMPOSITION */}
+      <div className="flex flex-col xl:flex-row gap-8 mb-[160px]">
+        {/* LEFT COLUMN: CONVICT FORM */}
+        <div className="flex-1 flex flex-col justify-center">
+          <h1 className="font-ivy-presto text-[64px] leading-[1.13] tracking-[0.64px] text-[var(--color-paper-white)] mb-10">
+            Process Pardon.
+          </h1>
+          
+          <div className="flex flex-col gap-6 max-w-md">
             <div>
-              <label className="text-xs font-bold text-white/70 block mb-1.5">Имя Фамилия (Латиница)</label>
+              <label className="block text-[14px] text-[var(--color-fog)] mb-2">Citizen Name (First_Last)</label>
               <input
                 type="text"
-                placeholder="Например: Kazil_Navalny"
+                placeholder="Kazil_Navalny"
                 value={fio}
                 onChange={e => {
                   setFio(e.target.value);
                   setFioWarning(false);
                 }}
-                className={`w-full bg-black/60 border rounded-xl px-4 py-2.5 text-sm text-white font-semibold focus:outline-none transition-colors ${
-                  fioWarning ? 'border-zinc-500 focus:border-zinc-400' : 'border-white/[0.08] focus:border-zinc-500/50'
+                className={`w-full bg-transparent border rounded-[9999px] px-5 py-3 text-[16px] font-inter text-[var(--color-paper-white)] placeholder-[var(--color-steel)] focus:border-[var(--color-paper-white)] focus:outline-none transition-colors ${
+                  fioWarning ? 'border-[var(--color-copper)]' : 'border-[var(--color-graphite)] hover:border-[var(--color-slate)]'
                 }`}
               />
               {fioWarning && (
-                <p className="text-[11px] text-zinc-400 mt-1.5 flex items-center gap-1">
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Имя распознано неуверенно — проверьте вручную
+                <p className="text-[12px] text-[var(--color-copper)] mt-2 flex items-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5" /> Name uncertain. Please verify manually.
                 </p>
               )}
             </div>
 
             <div>
-              <label className="text-xs font-bold text-white/70 block mb-1.5">Номер паспорта</label>
+              <label className="block text-[14px] text-[var(--color-fog)] mb-2">Passport Number</label>
               <input
                 type="text"
                 placeholder="601226"
                 value={passport}
                 onChange={e => setPassport(e.target.value)}
-                className="w-full bg-black/60 border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm font-mono text-zinc-300 font-bold focus:border-zinc-500/50 focus:outline-none"
+                className="w-full bg-transparent border border-[var(--color-graphite)] hover:border-[var(--color-slate)] rounded-[9999px] px-5 py-3 text-[16px] font-inter text-[var(--color-paper-white)] placeholder-[var(--color-steel)] focus:border-[var(--color-paper-white)] focus:outline-none transition-colors"
               />
             </div>
 
-            <div className="bg-[#0C0D12] border border-white/[0.08] rounded-2xl p-4 space-y-3 shadow-lg">
-              <div className="flex items-center justify-between gap-2">
-                <label className="text-xs font-bold text-white/80">Начальный / Накопленный суточный долг ($)</label>
+            <div>
+              <label className="block text-[14px] text-[var(--color-fog)] mb-2">Prior Daily Debt ($)</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={previousDebt}
+                  onChange={e => setPreviousDebt(e.target.value)}
+                  className="flex-1 bg-transparent border border-[var(--color-graphite)] hover:border-[var(--color-slate)] rounded-[9999px] px-5 py-3 text-[16px] font-inter text-[var(--color-paper-white)] placeholder-[var(--color-steel)] focus:border-[var(--color-paper-white)] focus:outline-none transition-colors"
+                />
                 <button
                   type="button"
                   onClick={handleResetDailyDebt}
-                  className="px-3 py-1.5 bg-zinc-500/10 hover:bg-zinc-500/20 text-zinc-300 border border-zinc-500/30 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0"
+                  className="rounded-[9999px] border border-[var(--color-graphite)] text-[var(--color-bone)] text-[14px] font-medium px-5 py-3 hover:border-[var(--color-slate)] transition-colors shrink-0 cursor-pointer"
                 >
-                  <RefreshCw className="w-3 h-3 text-zinc-400" />
-                  <span>Сбросить в $0</span>
+                  Reset
                 </button>
-              </div>
-
-              <input
-                type="number"
-                min="0"
-                placeholder="0"
-                value={previousDebt}
-                onChange={e => setPreviousDebt(e.target.value)}
-                className="w-full bg-black/60 border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm font-mono text-zinc-300 font-bold focus:border-zinc-500/50 focus:outline-none"
-              />
-              <p className="text-[11px] text-white/40 leading-relaxed">
-                Вы можете вручную ввести любую начальную сумму. Новое помилование прибавится к ней.
-              </p>
-            </div>
-
-            <div className="bg-zinc-500/10 border border-zinc-500/20 rounded-2xl p-4 space-y-2.5 shadow-inner">
-              <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
-                <span>Общая сумма за сутки долга:</span>
-                <span className="text-base font-mono font-extrabold text-zinc-400">{totalDailyDebt.toLocaleString('ru-RU')}$</span>
-              </div>
-              <p className="text-[10px] text-zinc-400 font-mono">
-                Накопленное ({prevDebtNum.toLocaleString('ru-RU')}$) + Текущее ({finalSum.toLocaleString('ru-RU')}$) = {totalDailyDebt.toLocaleString('ru-RU')}$
-              </p>
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-500/15 text-[11px]">
-                <div className="bg-black/40 rounded-xl p-2 text-center border border-white/5">
-                  <span className="text-white/50 text-[10px] uppercase font-bold block">🏛 В казну (85%)</span>
-                  <span className="text-white font-mono font-bold">{treasurySum.toLocaleString('ru-RU')}$</span>
-                </div>
-                <div className="bg-black/40 rounded-xl p-2 text-center border border-white/5">
-                  <span className="text-white/50 text-[10px] uppercase font-bold block">👑 Себе (15%)</span>
-                  <span className="text-zinc-300 font-mono font-bold">{selfSum.toLocaleString('ru-RU')}$</span>
-                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* CARD 2: SCREENSHOT SCANNER & OCR */}
-        <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/[0.07] rounded-2xl p-6 space-y-6 shadow-2xl shadow-black/60 backdrop-blur-xl">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2.5">
-                <FileSearch className="w-5 h-5 text-zinc-400" />
-                Анализ Скриншота базы данных
-              </h2>
-              <p className="text-xs text-white/50 mt-0.5">Автоматическое распознавание ФИО, паспорта и судимостей</p>
+        {/* RIGHT COLUMN: SCANNER CARD */}
+        <div className="flex-1">
+          <div className="bg-[var(--color-onyx)] rounded-[10px] p-[24px] border border-[var(--color-graphite)] shadow-[var(--shadow-subtle)]">
+            <div className="flex items-center justify-between mb-6">
+              <div className="text-[13px] font-semibold text-[var(--color-copper)] uppercase tracking-[-0.26px]">
+                DATABASE SCANNER
+              </div>
+              <details className="relative group">
+                <summary className="list-none cursor-pointer p-1 text-[var(--color-steel)] hover:text-[var(--color-bone)]">
+                  <Key className="w-4 h-4" />
+                </summary>
+                <div className="absolute right-0 top-full mt-2 w-64 bg-[var(--color-carbon)] border border-[var(--color-graphite)] rounded-[10px] p-4 z-10 shadow-2xl">
+                  <label className="block text-[12px] text-[var(--color-fog)] mb-2">Groq API Key</label>
+                  <input
+                    type="text"
+                    value={apiKey}
+                    onChange={e => handleApiKeyChange(e.target.value)}
+                    className="w-full bg-transparent border border-[var(--color-graphite)] rounded-[9999px] px-3 py-1.5 text-[12px] text-[var(--color-paper-white)] focus:border-[var(--color-slate)] focus:outline-none"
+                  />
+                </div>
+              </details>
             </div>
 
-            {/* API Settings toggle */}
-            <div className="relative group">
-              <button className="p-2 text-white/50 hover:text-zinc-300 hover:bg-white/5 rounded-xl transition-colors">
-                <Key className="w-4 h-4" />
+            <div className="flex items-center gap-2 mb-6">
+              <button
+                onClick={() => setCurrentMethod('tesseract')}
+                className={`flex-1 rounded-[9999px] py-2 px-4 text-[13px] font-medium border transition-colors cursor-pointer ${
+                  currentMethod === 'tesseract'
+                    ? 'border-[var(--color-bone)] text-[var(--color-bone)] bg-transparent'
+                    : 'border-[var(--color-slate)] text-[var(--color-steel)] hover:text-[var(--color-fog)]'
+                }`}
+              >
+                Local OCR
+              </button>
+              <button
+                onClick={() => setCurrentMethod('groq')}
+                className={`flex-1 rounded-[9999px] py-2 px-4 text-[13px] font-medium border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+                  currentMethod === 'groq'
+                    ? 'border-[var(--color-bone)] text-[var(--color-bone)] bg-transparent'
+                    : 'border-[var(--color-slate)] text-[var(--color-steel)] hover:text-[var(--color-fog)]'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" /> Groq Vision
               </button>
             </div>
-          </div>
 
-          {/* API Key Modal / Expandable */}
-          <details className="bg-black/40 border border-white/10 rounded-2xl p-4 space-y-3">
-            <summary className="text-xs font-bold text-white/70 cursor-pointer flex items-center gap-2">
-              <Key className="w-4 h-4 text-zinc-400" /> Настройки Groq Vision API
-            </summary>
-            <div className="pt-2 space-y-2">
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={e => e.preventDefault()}
+              onDrop={e => {
+                e.preventDefault();
+                if (e.dataTransfer.files?.[0]) handleImageFile(e.dataTransfer.files[0]);
+              }}
+              className={`border border-[var(--color-graphite)] rounded-[10px] p-[40px] text-center cursor-pointer transition-colors mb-6 ${
+                imagePreview ? 'bg-[var(--color-carbon)] border-[var(--color-slate)]' : 'bg-[var(--color-obsidian)] hover:border-[var(--color-slate)]'
+              }`}
+            >
               <input
-                type="text"
-                placeholder="Вставьте API-ключ (console.groq.com/keys)"
-                value={apiKey}
-                onChange={e => handleApiKeyChange(e.target.value)}
-                className="w-full bg-black/60 border border-white/15 rounded-xl px-3.5 py-2 text-xs font-mono text-zinc-300 focus:border-zinc-500/50 focus:outline-none"
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                className="hidden"
+                onChange={e => e.target.files?.[0] && handleImageFile(e.target.files[0])}
               />
-              <p className="text-[11px] text-white/40">
-                Бесплатный ключ сохраняется локально в вашем браузере.
+              <Upload className={`w-6 h-6 mx-auto mb-3 ${imagePreview ? 'text-[var(--color-bone)]' : 'text-[var(--color-steel)]'}`} />
+              <p className="text-[14px] text-[var(--color-bone)] font-medium">
+                {imagePreview ? 'Image Ready' : 'Click or drop screenshot'}
+              </p>
+              <p className="text-[12px] text-[var(--color-steel)] mt-1">
+                Ctrl + V to paste from clipboard
               </p>
             </div>
-          </details>
 
-          {/* Method Switcher Tabs */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setCurrentMethod('tesseract')}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                currentMethod === 'tesseract'
-                  ? 'bg-zinc-600/20 border-zinc-500/40 text-zinc-300 shadow-lg shadow-zinc-500/10'
-                  : 'bg-black/40 border-white/10 text-white/60 hover:text-white'
-              }`}
-            >
-              <FileSearch className="w-4 h-4 text-zinc-400" />
-              Tesseract.js (Локальный OCR)
-            </button>
+            {imagePreview && (
+              <div className="rounded-[10px] overflow-hidden border border-[var(--color-graphite)] bg-[var(--color-carbon)] flex items-center justify-center max-h-32 mb-6">
+                <img src={imagePreview} alt="Preview" className="max-h-32 object-contain" />
+              </div>
+            )}
 
-            <button
-              onClick={() => setCurrentMethod('groq')}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                currentMethod === 'groq'
-                  ? 'bg-zinc-600/20 border-zinc-500/40 text-zinc-300 shadow-lg shadow-zinc-500/10'
-                  : 'bg-black/40 border-white/10 text-white/60 hover:text-white'
-              }`}
-            >
-              <Sparkles className="w-4 h-4 text-zinc-400" />
-              Groq Vision AI
-            </button>
-          </div>
+            {isAnalyzing && (
+              <div className="w-full bg-[var(--color-carbon)] rounded-[9999px] h-1.5 overflow-hidden border border-[var(--color-graphite)] mb-6">
+                <div className="bg-[var(--color-bone)] h-full transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
+              </div>
+            )}
 
-          {/* Drag & Drop Zone */}
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={e => e.preventDefault()}
-            onDrop={e => {
-              e.preventDefault();
-              if (e.dataTransfer.files?.[0]) handleImageFile(e.dataTransfer.files[0]);
-            }}
-            className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
-              imagePreview ? 'border-zinc-500/50 bg-zinc-500/5' : 'border-white/15 hover:border-zinc-500/50 bg-black/40'
-            }`}
-          >
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              className="hidden"
-              onChange={e => e.target.files?.[0] && handleImageFile(e.target.files[0])}
-            />
-            <Upload className={`w-8 h-8 mx-auto mb-2 ${imagePreview ? 'text-zinc-400' : 'text-zinc-400/80'}`} />
-            <p className="text-xs font-bold text-white">
-              {imagePreview ? '✅ Скриншот загружен' : 'Нажмите для выбора файла или перетащите скриншот сюда'}
-            </p>
-            <p className="text-[11px] text-white/40 mt-1">
-              Также можно вставить из буфера обмена (Ctrl + V)
-            </p>
-          </div>
-
-          {/* Image Preview Thumbnail */}
-          {imagePreview && (
-            <div className="relative rounded-2xl overflow-hidden border border-white/15 max-h-48 bg-black/60 flex items-center justify-center">
-              <img src={imagePreview} alt="Screenshot Preview" className="max-h-48 object-contain" />
-            </div>
-          )}
-
-          {/* Progress Bar */}
-          {isAnalyzing && (
-            <div className="w-full bg-black/60 rounded-full h-2 overflow-hidden border border-white/10">
-              <div className="bg-gradient-to-r from-zinc-500 to-zinc-500 h-full transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-3">
             <button
               onClick={handleAnalyzeImage}
               disabled={isAnalyzing || !uploadedBase64}
-              className="w-full sm:flex-1 py-3 bg-zinc-600 hover:bg-zinc-500 border border-zinc-500/30 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-zinc-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
+              className="w-full rounded-[9999px] bg-[var(--color-paper-white)] text-[var(--color-obsidian)] text-[14px] font-medium px-5 py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              <FileSearch className="w-4 h-4" />
-              {isAnalyzing ? 'Анализ скриншота...' : 'Проанализировать скриншот'}
+              {isAnalyzing ? 'Analyzing...' : 'Scan Database'}
             </button>
-          </div>
+            
+            {statusMessage && (
+               <p className={`text-[12px] mt-4 text-center ${statusColor === 'red' ? 'text-red-400' : 'text-[var(--color-steel)]'}`}>
+                 {statusMessage}
+               </p>
+            )}
 
-          {/* Manual Text Input / Edit Fallback */}
-          <details className="bg-black/40 border border-white/10 rounded-2xl p-4 space-y-3">
-            <summary className="text-xs font-bold text-white/70 cursor-pointer">
-              Вставить или отредактировать текст вручную
-            </summary>
-            <div className="pt-2 space-y-3">
-              <textarea
-                rows={4}
-                placeholder="Вставьте текст или список статей..."
-                value={manualText}
-                onChange={e => setManualText(e.target.value)}
-                className="w-full bg-black/60 border border-white/15 rounded-xl p-3 text-xs font-mono text-white focus:border-zinc-500/50 focus:outline-none leading-relaxed"
-              />
-              <div className="flex items-center justify-between">
+            <details className="mt-6">
+              <summary className="text-[12px] text-[var(--color-steel)] cursor-pointer hover:text-[var(--color-bone)]">Manual Text Entry</summary>
+              <div className="mt-3 space-y-3">
+                <textarea
+                  rows={4}
+                  value={manualText}
+                  onChange={e => setManualText(e.target.value)}
+                  className="w-full bg-[var(--color-carbon)] border border-[var(--color-graphite)] rounded-[10px] p-3 text-[12px] text-[var(--color-bone)] font-mono focus:border-[var(--color-slate)] focus:outline-none"
+                  placeholder="Paste raw text here..."
+                />
                 <button
                   onClick={() => parseTextToRows(manualText)}
-                  className="px-4 py-2 bg-zinc-500/20 hover:bg-zinc-500/30 text-zinc-300 text-xs font-bold rounded-xl border border-zinc-500/30 transition-all cursor-pointer"
+                  className="w-full rounded-[9999px] border border-[var(--color-graphite)] text-[var(--color-bone)] text-[12px] font-medium py-2 hover:border-[var(--color-slate)] cursor-pointer"
                 >
-                  Разобрать текст
-                </button>
-
-                <button
-                  onClick={handleAddManualRow}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl border border-white/15 transition-all cursor-pointer flex items-center gap-1.5"
-                >
-                  <Plus className="w-3.5 h-3.5 text-zinc-400" /> Добавить статью вручную
+                  Parse Text
                 </button>
               </div>
-            </div>
-          </details>
+            </details>
+          </div>
         </div>
       </div>
 
-      {/* ARTICLES IN CONVICTION TABLE CARD */}
-      <div className="bg-black/50 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 lg:p-8 space-y-6 shadow-2xl backdrop-blur-xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+      {/* ARTICLES TABLE SECTION */}
+      <div className="mb-[160px]">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
           <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-2.5">
-              <FileText className="w-5 h-5 text-zinc-400" />
-              Статьи в судимости
+            <div className="text-[13px] font-semibold text-[var(--color-copper)] uppercase tracking-[-0.26px] mb-2">
+              ARTICLES
+            </div>
+            <h2 className="font-ivy-presto text-[44px] leading-[1.38] text-[var(--color-paper-white)]">
+              Conviction History
             </h2>
-            <p className="text-xs text-white/50 mt-0.5">
-              Тяжесть определяется по справочнику. Правило 24 часов блокирует неоплачиваемые статьи средней и высокой тяжести.
-            </p>
           </div>
-
           <button
             onClick={handleAddManualRow}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-500/20 hover:bg-zinc-500/30 text-zinc-300 text-xs font-bold rounded-xl border border-zinc-500/30 transition-all cursor-pointer shadow-md"
+            className="rounded-[9999px] border border-[var(--color-graphite)] text-[var(--color-bone)] text-[14px] font-medium px-5 py-2 hover:border-[var(--color-slate)] transition-colors shrink-0 cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> Добавить статью
+            Add Article
           </button>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto min-h-[240px] pb-12">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
-              <tr className="border-b border-white/10 text-white/40 uppercase tracking-wider font-semibold">
-                <th className="pb-3 px-3 w-10 text-center"></th>
-                <th className="pb-3 px-3">Статья</th>
-                <th className="pb-3 px-3">Дата получения</th>
-                <th className="pb-3 px-3">Время</th>
-                <th className="pb-3 px-3">Тяжесть статьи</th>
-                <th className="pb-3 px-3">Пошлина</th>
-                <th className="pb-3 px-3">Статус</th>
+              <tr className="border-b border-[var(--color-slate)]">
+                <th className="pb-3 px-2 w-10 text-[14px] text-[var(--color-fog)] font-medium"></th>
+                <th className="pb-3 px-2 text-[14px] text-[var(--color-fog)] font-medium">Article Code</th>
+                <th className="pb-3 px-2 text-[14px] text-[var(--color-fog)] font-medium">Date</th>
+                <th className="pb-3 px-2 text-[14px] text-[var(--color-fog)] font-medium">Time</th>
+                <th className="pb-3 px-2 text-[14px] text-[var(--color-fog)] font-medium w-48">Severity</th>
+                <th className="pb-3 px-2 text-[14px] text-[var(--color-fog)] font-medium text-right">Fee</th>
+                <th className="pb-3 px-2 text-[14px] text-[var(--color-fog)] font-medium text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody>
               {rowCalculations.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-white/30 italic">
-                    Статьи не добавлены. Загрузите скриншот или нажмите «Добавить статью».
+                  <td colSpan={7} className="py-12 text-center text-[var(--color-steel)] text-[14px]">
+                    No articles recorded. Scan a database screenshot or add manually.
                   </td>
                 </tr>
               ) : (
                 rowCalculations.map(row => (
-                  <tr key={row.id} className={row.isBlocked ? 'bg-zinc-500/[0.04]' : 'hover:bg-white/[0.03] backdrop-blur-2xl'}>
-                    {/* Delete */}
-                    <td className="py-3 px-3 text-center">
+                  <tr key={row.id} className="border-b border-[var(--color-graphite)] group hover:bg-[var(--color-carbon)] transition-colors">
+                    <td className="py-3 px-2 text-center">
                       <button
                         onClick={() => handleRemoveRow(row.id)}
-                        className="p-1.5 text-zinc-400 hover:text-zinc-300 hover:bg-zinc-500/10 rounded-lg transition-colors cursor-pointer"
-                        title="Удалить статью"
+                        className="text-[var(--color-steel)] hover:text-[var(--color-bone)] transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
-
-                    {/* Article Code */}
-                    <td className="py-3 px-3">
+                    <td className="py-3 px-2">
                       <input
                         type="text"
                         value={row.code}
                         onChange={e => handleUpdateRow(row.id, 'code', e.target.value)}
-                        placeholder="Статья (напр. 12.8)"
-                        className="bg-black/60 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold w-36 focus:border-zinc-500/50 focus:outline-none"
+                        placeholder="e.g. 12.8"
+                        className="bg-transparent border-none text-[15px] text-[var(--color-bone)] focus:outline-none w-full"
                       />
                     </td>
-
-                    {/* Date */}
-                    <td className="py-3 px-3">
+                    <td className="py-3 px-2">
                       <input
                         type="text"
                         value={row.date}
                         onChange={e => handleUpdateRow(row.id, 'date', e.target.value)}
-                        placeholder="ДД.ММ.ГГГГ"
-                        className="bg-black/60 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white w-28 focus:border-zinc-500/50 focus:outline-none"
+                        placeholder="DD.MM.YYYY"
+                        className="bg-transparent border-none text-[15px] text-[var(--color-bone)] focus:outline-none w-full"
                       />
                     </td>
-
-                    {/* Time */}
-                    <td className="py-3 px-3">
+                    <td className="py-3 px-2">
                       <input
                         type="text"
                         value={row.time}
                         onChange={e => handleUpdateRow(row.id, 'time', e.target.value)}
-                        placeholder="ЧЧ:ММ"
-                        className="bg-black/60 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono w-20 focus:border-zinc-500/50 focus:outline-none"
+                        placeholder="HH:MM"
+                        className="bg-transparent border-none text-[15px] text-[var(--color-bone)] focus:outline-none w-full"
                       />
                     </td>
-
-                    {/* Severity Select */}
-                    <td className="py-3 px-3 min-w-[140px]">
+                    <td className="py-3 px-2">
                       <CustomSelect
                         value={row.tyazhest}
                         onChange={val => handleUpdateRow(row.id, 'tyazhest', val)}
                         options={[
-                          { value: '', label: '-- выберите --' },
+                          { value: '', label: '-- Select --' },
                           ...Object.entries(LABELS).map(([k, v]) => ({ value: k, label: v }))
                         ]}
-                        size="sm"
                       />
                     </td>
-
-                    {/* Fee Price */}
-                    <td className="py-3 px-3 font-mono font-bold text-zinc-400">
-                      {row.price ? `${row.price.toLocaleString('ru-RU')}$` : '—'}
+                    <td className="py-3 px-2 text-right text-[15px] text-[var(--color-bone)] font-mono">
+                      {row.price ? `$${row.price.toLocaleString('ru-RU')}` : '-'}
                     </td>
-
-                    {/* Status Badge */}
-                    <td className="py-3 px-3">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                    <td className="py-3 px-2 text-right">
+                      <span className={`px-2.5 py-1 rounded-[9999px] text-[12px] font-medium border ${
                         row.isBlocked 
-                          ? 'bg-zinc-500/15 text-zinc-300 border border-zinc-500/30' 
-                          : 'bg-zinc-500/15 text-zinc-300 border border-zinc-500/30'
+                          ? 'border-[var(--color-slate)] text-[var(--color-steel)]' 
+                          : 'border-[var(--color-copper)] text-[var(--color-copper)]'
                       }`}>
                         {row.statusText}
                       </span>
@@ -1261,84 +1165,73 @@ export default function PardonCalculatorView() {
         </div>
       </div>
 
-      {/* SUMMARY & REPORT CARD */}
-      <div className="bg-black/50 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 lg:p-8 space-y-6 shadow-2xl backdrop-blur-xl">
-        <div className="border-b border-white/10 pb-4">
-          <h2 className="text-base font-bold text-white flex items-center gap-2.5">
-            <DollarSign className="w-5 h-5 text-zinc-400" />
-            Расчёт пошлины и Финансовый итог
-          </h2>
-          <p className="text-xs text-white/50 mt-0.5">Распределение средств между Казной и Пошлиной</p>
+      {/* FINANCIAL SUMMARY SECTION */}
+      <div>
+        <div className="text-[13px] font-semibold text-[var(--color-copper)] uppercase tracking-[-0.26px] mb-2">
+          FINANCIAL SUMMARY
         </div>
+        <h2 className="font-ivy-presto text-[44px] leading-[1.38] text-[var(--color-paper-white)] mb-10">
+          Final Distribution
+        </h2>
 
-        {/* 4 Main Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-black/40 border border-white/10 rounded-2xl p-5 space-y-1">
-            <span className="text-[11px] uppercase font-bold text-white/40">Сумма пошлин (сырая)</span>
-            <div className="text-2xl font-extrabold text-white font-mono">{rawSum.toLocaleString('ru-RU')}$</div>
-          </div>
-
-          <div className="bg-zinc-500/10 border border-zinc-500/20 rounded-2xl p-5 space-y-1 relative overflow-hidden shadow-xl">
-            <span className="text-[11px] uppercase font-extrabold text-zinc-300">Текущее помилование</span>
-            <div className="text-2xl font-extrabold text-zinc-400 font-mono">{finalSum.toLocaleString('ru-RU')}$</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Current Pardon Card with Gilded Gradient */}
+          <div className="bg-[var(--color-onyx)] rounded-[10px] p-[24px] border border-[var(--color-graphite)] relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[2px]" style={{ background: 'var(--color-gilded-gradient)' }}></div>
+            <div className="text-[14px] text-[var(--color-fog)] mb-2">Current Pardon Total</div>
+            <div className="font-ivy-presto text-[44px] text-[var(--color-paper-white)] leading-[1]">
+              ${finalSum.toLocaleString('ru-RU')}
+            </div>
             {prevDebtNum + rawSum > TOTAL_CAP && (
-              <p className="text-[10px] text-zinc-300 font-bold mt-1">
-                ⚠ Превышен лимит $170k за 24ч — сумма срезана.
+              <p className="text-[13px] text-[var(--color-steel)] mt-3">
+                Note: Total capped at $170,000 limit.
               </p>
             )}
           </div>
 
-          <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/[0.07] rounded-2xl p-5 space-y-1 shadow-xl">
-            <span className="text-[11px] uppercase font-extrabold text-zinc-300">Общая сумма за сутки долга</span>
-            <div className="text-2xl font-extrabold text-zinc-300 font-mono">{totalDailyDebt.toLocaleString('ru-RU')}$</div>
-            <p className="text-[10px] text-zinc-500 font-mono font-bold">Прошлое + Нынешнее</p>
-          </div>
-
-          <div className="bg-black/40 border border-white/10 rounded-2xl p-5 space-y-1">
-            <span className="text-[11px] uppercase font-bold text-white/40">Учтено статей</span>
-            <div className="text-2xl font-extrabold text-zinc-400 font-mono">{countOk}</div>
+          <div className="bg-[var(--color-onyx)] rounded-[10px] p-[24px] border border-[var(--color-graphite)]">
+            <div className="text-[14px] text-[var(--color-fog)] mb-2">Accumulated Daily Debt</div>
+            <div className="font-ivy-presto text-[44px] text-[var(--color-paper-white)] leading-[1]">
+              ${totalDailyDebt.toLocaleString('ru-RU')}
+            </div>
+            <p className="text-[13px] text-[var(--color-steel)] mt-3">
+              Prior + Current
+            </p>
           </div>
         </div>
 
-        {/* Split: Treasury vs Fee */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-black/40 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <div className="bg-[var(--color-carbon)] rounded-[10px] p-[24px] border border-[var(--color-graphite)] flex justify-between items-center">
             <div>
-              <span className="text-xs font-bold text-white/50 uppercase tracking-wider block">В казну (85% от суточного долга)</span>
-              <span className="text-xl font-extrabold text-white font-mono mt-1 block">{treasurySum.toLocaleString('ru-RU')}$</span>
-              <span className="text-[10px] text-zinc-400 font-mono mt-0.5 block">85% исчисляется от общей суммы долга за сутки (${totalDailyDebt.toLocaleString('ru-RU')})</span>
+              <div className="text-[14px] text-[var(--color-fog)] mb-1">Treasury (85%)</div>
+              <div className="text-[24px] text-[var(--color-paper-white)] font-semibold">${treasurySum.toLocaleString('ru-RU')}</div>
             </div>
-            <Building className="w-8 h-8 text-zinc-400/40" />
+            <Building className="w-6 h-6 text-[var(--color-steel)]" />
           </div>
 
-          <div className="bg-black/40 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-xl">
+          <div className="bg-[var(--color-carbon)] rounded-[10px] p-[24px] border border-[var(--color-graphite)] flex justify-between items-center">
             <div>
-              <span className="text-xs font-bold text-white/50 uppercase tracking-wider block">Себе (15% от суточного долга)</span>
-              <span className="text-xl font-extrabold text-zinc-300 font-mono mt-1 block">{selfSum.toLocaleString('ru-RU')}$</span>
-              <span className="text-[10px] text-zinc-400 font-mono mt-0.5 block">15% исчисляется от общей суммы долга за сутки (${totalDailyDebt.toLocaleString('ru-RU')})</span>
+              <div className="text-[14px] text-[var(--color-fog)] mb-1">Officer Fee (15%)</div>
+              <div className="text-[24px] text-[var(--color-paper-white)] font-semibold">${selfSum.toLocaleString('ru-RU')}</div>
             </div>
-            <Award className="w-8 h-8 text-zinc-400/40" />
+            <Award className="w-6 h-6 text-[var(--color-steel)]" />
           </div>
         </div>
 
-        {/* Report Text Output */}
-        <div className="space-y-3 pt-2">
-          <label className="text-xs font-extrabold text-zinc-300 uppercase tracking-wider block">
-            Сформированный отчёт по обращению
-          </label>
-          <div className="bg-black/60 border border-white/15 rounded-2xl p-4 text-xs font-mono text-zinc-200 whitespace-pre-line leading-relaxed shadow-inner">
+        {/* Action Bottom */}
+        <div className="bg-[var(--color-onyx)] rounded-[10px] p-[32px] border border-[var(--color-graphite)]">
+          <h3 className="text-[14px] text-[var(--color-fog)] mb-4">Generated Report</h3>
+          <div className="text-[16px] text-[var(--color-bone)] leading-relaxed whitespace-pre-line mb-8 font-mono bg-[var(--color-carbon)] p-6 rounded-[10px] border border-[var(--color-slate)]">
             {reportText}
           </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleCopyReport}
-              className="flex-1 py-3 bg-zinc-600 hover:bg-zinc-500 border border-zinc-500/30 text-white font-extrabold text-xs rounded-xl shadow-xl shadow-zinc-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-            >
-              {copiedReport ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              {copiedReport ? 'Отчёт скопирован!' : 'Скопировать отчёт'}
-            </button>
-          </div>
+          
+          <button
+            onClick={handleCopyReport}
+            className="rounded-[9999px] bg-[var(--color-paper-white)] text-[var(--color-obsidian)] text-[16px] font-medium px-8 py-4 transition-colors flex items-center justify-center gap-2 hover:opacity-90 cursor-pointer"
+          >
+            {copiedReport ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+            {copiedReport ? 'Copied to Clipboard' : 'Copy Report & Process'}
+          </button>
         </div>
       </div>
     </div>
