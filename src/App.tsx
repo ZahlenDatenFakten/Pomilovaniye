@@ -20,7 +20,7 @@ export default function App() {
       </div>
 
       {/* MAIN CONTAINER */}
-      <main className="relative z-10 py-5 sm:py-7 px-3 sm:px-6 max-w-[1440px] mx-auto">
+      <main className="relative z-10 py-6 sm:py-10 px-4 sm:px-8 max-w-[1600px] mx-auto">
         <PardonCalculatorView />
       </main>
     </div>

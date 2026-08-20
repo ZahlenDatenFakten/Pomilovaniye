@@ -100,15 +100,15 @@ export function CustomSelect<T extends string | number = string>({
   };
 
   const sizeClasses = {
-    sm: 'px-2.5 py-1.5 text-xs rounded-lg',
-    md: 'px-3 py-2 text-xs font-semibold rounded-xl',
-    lg: 'px-4 py-2.5 text-sm font-bold rounded-xl'
+    sm: 'px-3 py-2 text-xs font-semibold rounded-xl min-h-[38px]',
+    md: 'px-4 py-2.5 sm:py-3 text-sm font-semibold rounded-2xl min-h-[46px]',
+    lg: 'px-5 py-3.5 text-base font-bold rounded-2xl min-h-[54px]'
   };
 
   return (
     <div className={`relative inline-block w-full ${className}`}>
       {label && (
-        <label className="text-[10px] font-bold text-zinc-400 block mb-1 uppercase tracking-wider">
+        <label className="text-xs font-bold text-zinc-400 block mb-1.5 uppercase tracking-wider">
           {label}
         </label>
       )}
@@ -119,23 +119,23 @@ export function CustomSelect<T extends string | number = string>({
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-2 glass-input text-white transition-all duration-150 hover:border-white/25 focus:outline-none cursor-pointer ${
+        className={`w-full flex items-center justify-between gap-2.5 glass-input text-white transition-all duration-150 hover:border-white/30 focus:outline-none cursor-pointer ${
           sizeClasses[size]
-        } ${isOpen ? 'border-white/40 ring-1 ring-white/20' : ''} ${
+        } ${isOpen ? 'border-white/50 ring-2 ring-white/20 bg-white/[0.08]' : ''} ${
           disabled ? 'opacity-40 cursor-not-allowed' : ''
         } ${buttonClassName}`}
       >
-        <span className="truncate flex items-center gap-1.5">
+        <span className="truncate flex items-center gap-2">
           {selectedOption && 'icon' in selectedOption && selectedOption.icon && (
             <span className="shrink-0 text-zinc-300">{selectedOption.icon}</span>
           )}
-          <span className={selectedOption ? 'text-zinc-100 font-medium' : 'text-zinc-500'}>
+          <span className={selectedOption ? 'text-zinc-100 font-semibold' : 'text-zinc-500'}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </span>
 
         <ChevronDown
-          className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-150 ${
+          className={`w-4 h-4 text-zinc-400 shrink-0 transition-transform duration-200 ${
             isOpen ? 'rotate-180 text-white' : ''
           }`}
         />
@@ -146,22 +146,22 @@ export function CustomSelect<T extends string | number = string>({
         <AnimatePresence>
           <motion.div
             ref={dropdownRef}
-            initial={{ opacity: 0, y: coords.placeAbove ? 4 : -4, scale: 0.98 }}
+            initial={{ opacity: 0, y: coords.placeAbove ? 6 : -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: coords.placeAbove ? 4 : -4, scale: 0.98 }}
-            transition={{ duration: 0.12, ease: 'easeOut' }}
+            exit={{ opacity: 0, y: coords.placeAbove ? 6 : -6, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
             style={{
               position: 'fixed',
-              top: coords.placeAbove ? 'auto' : `${coords.top + 4}px`,
-              bottom: coords.placeAbove ? `${window.innerHeight - coords.top + 4}px` : 'auto',
+              top: coords.placeAbove ? 'auto' : `${coords.top + 6}px`,
+              bottom: coords.placeAbove ? `${window.innerHeight - coords.top + 6}px` : 'auto',
               left: `${coords.left}px`,
               width: `${coords.width}px`,
               zIndex: 999999,
             }}
-            className={`max-h-60 overflow-y-auto custom-scrollbar bg-[#0d0d12]/98 border border-white/15 rounded-xl shadow-2xl shadow-black backdrop-blur-2xl py-1 space-y-0.5 ${dropdownClassName}`}
+            className={`max-h-72 overflow-y-auto custom-scrollbar bg-[#0c0c12]/98 border border-white/20 rounded-2xl shadow-2xl shadow-black backdrop-blur-3xl p-1.5 space-y-1 ${dropdownClassName}`}
           >
             {options.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-zinc-500 italic text-center">
+              <div className="px-4 py-3 text-sm text-zinc-500 italic text-center">
                 Нет вариантов
               </div>
             ) : (
@@ -175,20 +175,20 @@ export function CustomSelect<T extends string | number = string>({
                     type="button"
                     disabled={isDisabled}
                     onClick={() => handleSelect(option.value, isDisabled)}
-                    className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left transition-colors cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 text-sm text-left transition-all rounded-xl cursor-pointer ${
                       isSelected
-                        ? 'bg-white/10 text-white font-semibold'
-                        : 'text-zinc-300 hover:bg-white/5 hover:text-white'
+                        ? 'bg-white/15 text-white font-bold shadow-sm'
+                        : 'text-zinc-300 hover:bg-white/[0.07] hover:text-white'
                     } ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                   >
-                    <div className="flex items-center gap-2 truncate">
+                    <div className="flex items-center gap-2.5 truncate">
                       {'icon' in option && option.icon && (
                         <span className="shrink-0 text-zinc-400">{option.icon}</span>
                       )}
-                      <div className="truncate font-medium">{option.label}</div>
+                      <div className="truncate font-semibold">{option.label}</div>
                     </div>
 
-                    {isSelected && <Check className="w-3.5 h-3.5 text-white shrink-0 ml-2" />}
+                    {isSelected && <Check className="w-4 h-4 text-white shrink-0 ml-2" />}
                   </button>
                 );
               })
