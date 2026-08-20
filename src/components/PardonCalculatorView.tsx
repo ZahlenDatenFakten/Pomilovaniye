@@ -101,7 +101,29 @@ export default function PardonCalculatorView() {
 
   const [treasuryEntries, setTreasuryEntries] = useState<TreasuryEntry[]>(() => {
     const saved = localStorage.getItem('treasuryData');
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.length > 0) return parsed;
+    }
+    
+    // Backfill from legacy accumulated debt if treasury is empty
+    const legacyDebtStr = localStorage.getItem('pardon_daily_accumulated_debt');
+    if (legacyDebtStr) {
+      const legacyDebt = parseInt(legacyDebtStr, 10);
+      if (!isNaN(legacyDebt) && legacyDebt > 0) {
+        const now = new Date();
+        const dd = String(now.getDate()).padStart(2, '0');
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yyyy = now.getFullYear();
+        return [{
+          id: 'legacy-backfill',
+          citizenName: 'Прошлые помилования (Синхронизация)',
+          amount: legacyDebt,
+          date: `${dd}.${mm}.${yyyy}`
+        }];
+      }
+    }
+    return [];
   });
 
   useEffect(() => {
