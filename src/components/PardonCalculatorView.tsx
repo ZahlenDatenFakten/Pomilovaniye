@@ -87,9 +87,27 @@ const SPECIAL_ENTRIES: Record<string, { display: string; tyazhest: string }> = {
   'побег из тюрьмы': { display: 'Побег из тюрьмы', tyazhest: 'medium' }
 };
 
+export interface TreasuryEntry {
+  id: string;
+  citizenName: string;
+  amount: number;
+  date: string;
+}
+
 export default function PardonCalculatorView() {
   const [fio, setFio] = useState('');
   const [passport, setPassport] = useState('');
+  const [fioWarning, setFioWarning] = useState(false);
+
+  const [treasuryEntries, setTreasuryEntries] = useState<TreasuryEntry[]>(() => {
+    const saved = localStorage.getItem('treasuryData');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('treasuryData', JSON.stringify(treasuryEntries));
+  }, [treasuryEntries]);
+
   const [previousDebt, setPreviousDebt] = useState(() => {
     try {
       return localStorage.getItem('pardon_daily_accumulated_debt') || '0';
@@ -97,7 +115,6 @@ export default function PardonCalculatorView() {
       return '0';
     }
   });
-  const [fioWarning, setFioWarning] = useState(false);
 
   const [rows, setRows] = useState<PardonArticleRow[]>([]);
   const [rowSeq, setRowSeq] = useState(1);
@@ -113,6 +130,70 @@ export default function PardonCalculatorView() {
       localStorage.setItem('pardon_daily_accumulated_debt', previousDebt);
     } catch (e) {}
   }, [previousDebt]);
+
+  const handleCopyUdoReport = () => {
+    navigator.clipboard.writeText(udoReportText);
+    notifyToast('Отчет об УДО скопирован в буфер!', 'success');
+  };
+
+  const handleCopyPardonReport = () => {
+    navigator.clipboard.writeText(pardonReportText);
+    notifyToast('Отчет о помиловании скопирован в буфер!', 'success');
+  };
+
+  const handleAddToTreasury = () => {
+    if (finalPrice <= 0) {
+      notifyToast('Сумма должна быть больше 0', 'error');
+      return;
+    }
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const dateStr = `${dd}.${mm}.${yyyy}`;
+    
+    const newEntry: TreasuryEntry = {
+      id: Date.now().toString(),
+      citizenName: fio || 'Неизвестный',
+      amount: finalPrice,
+      date: dateStr
+    };
+    
+    setTreasuryEntries([...treasuryEntries, newEntry]);
+    notifyToast(`Добавлено в казну: $${finalPrice.toLocaleString('ru-RU')}`, 'success');
+  };
+
+  const getTreasuryDateString = () => {
+    const dates = Array.from(new Set(treasuryEntries.map(e => e.date)));
+    if (dates.length === 0) return '';
+    if (dates.length === 1) return dates[0];
+    const sorted = dates.sort((a,b) => {
+      const [d1,m1,y1] = a.split('.');
+      const [d2,m2,y2] = b.split('.');
+      return new Date(`${y1}-${m1}-${d1}`).getTime() - new Date(`${y2}-${m2}-${d2}`).getTime();
+    });
+    return `${sorted[0]} - ${sorted[sorted.length - 1]}`;
+  };
+
+  const handleCopyTreasuryReport = () => {
+    const totalAmount = treasuryEntries.reduce((sum, e) => sum + e.amount, 0);
+    const treasuryAmount = totalAmount * 0.85;
+    const dateStr = getTreasuryDateString();
+    
+    const fmtTotal = totalAmount.toLocaleString('ru-RU').replace(/\s/g, '.');
+    const fmtTreasury = treasuryAmount.toLocaleString('ru-RU').replace(/\s/g, '.');
+    
+    const text = `Помилований на ${fmtTotal}$ | ${dateStr}\nНа казне ${fmtTreasury}$`;
+    navigator.clipboard.writeText(text);
+    notifyToast('Итоговый отчет скопирован!', 'success');
+  };
+
+  const handleClearTreasury = () => {
+    if (window.confirm('Вы уверены, что хотите очистить отчет для казны?')) {
+      setTreasuryEntries([]);
+      notifyToast('Казна очищена', 'success');
+    }
+  };
 
   const handleResetDailyDebt = () => {
     setPreviousDebt('0');
@@ -852,6 +933,23 @@ export default function PardonCalculatorView() {
     navigator.clipboard.writeText(reportText).then(() => {
       setCopiedReport(true);
 
+      // Add to Treasury
+      if (finalSum > 0) {
+        const now = new Date();
+        const dd = String(now.getDate()).padStart(2, '0');
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yyyy = now.getFullYear();
+        const dateStr = `${dd}.${mm}.${yyyy}`;
+        
+        const newEntry: TreasuryEntry = {
+          id: Date.now().toString(),
+          citizenName: fio.trim() || 'Неизвестный',
+          amount: finalSum,
+          date: dateStr
+        };
+        setTreasuryEntries(prev => [...prev, newEntry]);
+      }
+
       const newAccumulated = totalDailyDebt.toString();
       setPreviousDebt(newAccumulated);
       try {
@@ -1352,6 +1450,68 @@ export default function PardonCalculatorView() {
               {copiedReport ? <Check className="w-6 h-6 text-black" /> : <Copy className="w-6 h-6 text-black" />}
               <span>{copiedReport ? '✓ Отчёт скопирован!' : 'Скопировать отчёт и применить'}</span>
             </button>
+          </section>
+
+          {/* CARD 5: TREASURY REPORT */}
+          <section className="glass-panel rounded-3xl p-7 sm:p-8 space-y-6 border border-white/15 shadow-2xl relative overflow-hidden mt-6">
+            <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-white">
+                  <Building className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-base sm:text-lg font-bold text-white uppercase tracking-wider">
+                  Итоговый отчёт (Казна)
+                </h2>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-white/10 text-xs sm:text-sm font-mono text-zinc-200 font-extrabold border border-white/10">
+                {treasuryEntries.length}
+              </span>
+            </div>
+
+            {/* List of saved entries */}
+            <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-hide pr-1">
+              {treasuryEntries.length === 0 ? (
+                <div className="text-sm text-zinc-500 italic text-center py-4">Помилования пока не добавлены</div>
+              ) : (
+                treasuryEntries.map(entry => (
+                  <div key={entry.id} className="flex items-center justify-between px-4 py-3 bg-white/5 rounded-xl border border-white/5">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-zinc-200">{entry.citizenName}</span>
+                      <span className="text-xs text-zinc-500 font-mono">{entry.date}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-mono font-bold text-white">${entry.amount.toLocaleString('ru-RU')}</span>
+                      <button onClick={() => setTreasuryEntries(prev => prev.filter(e => e.id !== entry.id))} className="text-zinc-500 hover:text-red-400 cursor-pointer">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="glass-input rounded-2xl p-4.5 text-xs sm:text-sm font-mono text-zinc-200 whitespace-pre-line leading-relaxed border border-white/15 select-all shadow-inner">
+              {`Помилований на ${treasuryEntries.reduce((sum, e) => sum + e.amount, 0).toLocaleString('ru-RU').replace(/\s/g, '.')}$ | ${getTreasuryDateString()}\nНа казне ${(treasuryEntries.reduce((sum, e) => sum + e.amount, 0) * 0.85).toLocaleString('ru-RU').replace(/\s/g, '.')}$`}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={handleCopyTreasuryReport}
+                className="w-full py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/15 hover:border-white/25 font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <Copy className="w-4 h-4" />
+                <span>Скопировать</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleClearTreasury}
+                className="w-full py-3 px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/15 hover:border-red-500/30 font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Очистить</span>
+              </button>
+            </div>
           </section>
         </div>
       </div>
