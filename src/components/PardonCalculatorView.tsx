@@ -922,10 +922,7 @@ export default function PardonCalculatorView() {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/[0.05] border border-white/15 text-zinc-200 text-xs sm:text-sm font-mono font-medium">
-            <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse shadow-sm shadow-white" />
-            <span>Лимит: $170,000 / 24ч</span>
-          </div>
+
 
           <button
             onClick={handleResetAll}
