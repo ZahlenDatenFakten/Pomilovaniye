@@ -718,23 +718,37 @@ export default function PardonCalculatorView() {
         return;
       }
 
-      // Clean out junk text and extract all article numbers
-      let cleanLine = line
-        .replace(/(?:следственн[а-я]+\s+изолятор|федеральн[а-я]+\s+тюрьма|тюрьма|fbi|lspd|fib|sasp|lscsd)/gi, ' ')
-        .replace(/\b(?:уак[- ]?са|уак|ук[- ]?са|ук|yak[- ]?sa|yak|uk)\b/gi, ' ')
-        .replace(/\b\d{1,2}[:;]\d{2}(?::\d{2})?\b/g, ' ')
-        .replace(/\b\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?\b/g, ' ')
-        .replace(/\b(19|20)\d{2}\b/g, ' ')
-        .replace(/\b\d{5,7}\b/g, ' ');
+      // Clean out junk text and extract all article numbers using robust token logic
+      let cleanLine = line;
+      if (dtMatch) {
+        cleanLine = line.replace(dtMatch[0], ' ');
+      }
+      cleanLine = cleanLine.replace(/[a-zA-Zа-яА-ЯёЁ]+/g, ' ');
+      cleanLine = cleanLine.replace(/[,/]/g, '.');
 
-      const articleRegex = /\b\d{1,2}[.,-]\d{1,2}(?:[.,-]\d{1,2})?\b/g;
-      let artMatch;
-      while ((artMatch = articleRegex.exec(cleanLine)) !== null) {
-        const code = artMatch[0].replace(/,/g, '.').replace(/-/g, '.');
-        if (code.startsWith('0')) continue;
+      const tokens = cleanLine.split(/[\s\-]+/).map(t => t.replace(/^\.+|\.+$/g, ''));
+      const articles: string[] = [];
+
+      for (let t of tokens) {
+        if (!t) continue;
+        if (/^\d{1,2}\.\d{1,2}$/.test(t)) {
+          articles.push(t);
+        } else if (/^\d{1,2}\.\d{1,2}\.\d{1,2}$/.test(t)) {
+          articles.push(t);
+        } else if (/^(\d{1,2}\.\d{1,2})\.(\d{1,2}\.\d{1,2})$/.test(t)) {
+          const m = t.match(/^(\d{1,2}\.\d{1,2})\.(\d{1,2}\.\d{1,2})$/);
+          if (m) { articles.push(m[1]); articles.push(m[2]); }
+        } else {
+          const m = t.match(/\d{1,2}\.\d{1,2}/g);
+          if (m) articles.push(...m);
+        }
+      }
+
+      articles.forEach(code => {
+        if (code.startsWith('0')) return;
 
         const key = normKey(code) + '|' + lastDate + '|' + lastTime;
-        if (seen.has(key)) continue;
+        if (seen.has(key)) return;
         seen.add(key);
 
         const ty = severityDict[normKey(code)] || SEED_SEVERITY[code] || 'medium';
@@ -745,7 +759,7 @@ export default function PardonCalculatorView() {
           time: lastTime,
           tyazhest: ty
         });
-      }
+      });
     });
 
     setRowSeq(currentSeq);

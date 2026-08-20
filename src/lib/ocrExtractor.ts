@@ -256,32 +256,41 @@ export function parseTableRecords(rawText: string): ArrestRecord[] {
       }
     }
 
-    // Clean out junk text like "уак-са", "уак", "следственный изолятор"
-    let cleanLine = line
-      .replace(/(?:следственн[а-я]+\s+изолятор|федеральн[а-я]+\s+тюрьма|тюрьма|fbi|lspd|fib|sasp|lscsd)/gi, ' ')
-      .replace(/\b(?:уак[- ]?са|уак|ук[- ]?са|ук|yak[- ]?sa|yak|uk)\b/gi, ' ')
-      .replace(/\b\d{1,2}[:;]\d{2}(?::\d{2})?\b/g, ' ')
-      .replace(/\b\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?\b/g, ' ');
+    let cleanLine = line;
+    if (dtMatch) {
+      cleanLine = line.replace(dtMatch[0], ' ');
+    }
+    cleanLine = cleanLine.replace(/[a-zA-Zа-яА-ЯёЁ]+/g, ' ');
+    cleanLine = cleanLine.replace(/[,/]/g, '.');
 
-    // Extract all articles from line (e.g. 12.1 12.8, 25,5, 17.1)
-    const articleRegex = /\b\d{1,2}[.,-]\d{1,2}(?:[.,-]\d{1,2})?\b/g;
+    const tokens = cleanLine.split(/[\s\-]+/).map(t => t.replace(/^\.+|\.+$/g, ''));
     const articles: string[] = [];
-    let artMatch;
-    while ((artMatch = articleRegex.exec(cleanLine)) !== null) {
-      const code = artMatch[0].replace(/,/g, '.').replace(/-/g, '.');
-      if (!code.startsWith('0')) {
-        articles.push(code);
+
+    for (let t of tokens) {
+      if (!t) continue;
+      if (/^\d{1,2}\.\d{1,2}$/.test(t)) {
+        articles.push(t);
+      } else if (/^\d{1,2}\.\d{1,2}\.\d{1,2}$/.test(t)) {
+        articles.push(t);
+      } else if (/^(\d{1,2}\.\d{1,2})\.(\d{1,2}\.\d{1,2})$/.test(t)) {
+        const m = t.match(/^(\d{1,2}\.\d{1,2})\.(\d{1,2}\.\d{1,2})$/);
+        if (m) { articles.push(m[1]); articles.push(m[2]); }
+      } else {
+        const m = t.match(/\d{1,2}\.\d{1,2}/g);
+        if (m) articles.push(...m);
       }
     }
 
     articles.forEach(art => {
-      records.push({
-        time: lastTime,
-        date: lastDate,
-        article: art,
-        officer: '',
-        jail: 'Следственный изолятор'
-      });
+      if (!art.startsWith('0')) {
+        records.push({
+          time: lastTime,
+          date: lastDate,
+          article: art,
+          officer: '',
+          jail: 'Следственный изолятор'
+        });
+      }
     });
   });
 
