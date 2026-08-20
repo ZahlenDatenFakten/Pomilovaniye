@@ -655,14 +655,48 @@ export default function PardonCalculatorView() {
     }
 
     // Helper for validating candidate names
+    const BLOCKED_WORDS = new Set([
+      'database', 'gov', 'gta5', 'gta', 'rp', 'lspd', 'fbi', 'fib', 'usss', 'sasp', 'shpd', 'lscsd',
+      'redwood', 'jorno', 'vegas', 'police', 'sheriff', 'government', 'san', 'andreas',
+      'следственный', 'изолятор', 'паспорт', 'гражданин', 'досье', 'база', 'данных',
+      'правонарушителей', 'новости', 'правительство', 'правительства', 'сан', 'андреас',
+      'статья', 'статьи', 'дата', 'время', 'проводил', 'арест', 'напарник',
+      'розыск', 'штраф', 'наличные', 'тюрьма', 'организация', 'должность',
+      'прописка', 'гражданство', 'уровень', 'мужской', 'женский', 'пол',
+      'фио', 'фамилия', 'имя', 'отчество', 'surname', 'passport', 'name',
+      'номер', 'телефон', 'адрес', 'дело', 'судимость', 'судимости',
+      'одобрено', 'отказ', 'помилование', 'помилования', 'калькулятор',
+      'реестр', 'снятие', 'вид', 'тяжесть', 'пошлина', 'сумма',
+      'кнопка', 'добавить', 'удалить', 'очистить', 'копировать', 'отчет', 'отчёт',
+      'казна', 'казне', 'итог', 'итоговый', 'финансовый', 'распределение',
+      'текущее', 'долг', 'лимит', 'применить',
+      'id', 'lvl', 'age', 'level'
+    ]);
+
     const isCitizenName = (candidate: string): boolean => {
       if (!candidate) return false;
-      const clean = candidate.trim().replace(/[\s\.]+/, '_');
+      const clean = candidate.trim().replace(/[\s\.]+/g, '_');
       if (clean.length < 4) return false;
       if (!/[a-zA-Zа-яА-ЯёЁ]/.test(clean)) return false;
+
+      // Must have exactly 2 parts (Имя_Фамилия)
+      const parts = clean.split('_').filter(Boolean);
+      if (parts.length < 2) return false;
+
+      // Check EVERY part against the blocklist individually
+      for (const part of parts) {
+        const normPart = part.toLowerCase();
+        if (BLOCKED_WORDS.has(normPart)) return false;
+        // Reject parts that are pure digits
+        if (/^\d+$/.test(part)) return false;
+        // Reject parts shorter than 2 characters
+        if (part.length < 2) return false;
+        // Reject parts that look like article codes (e.g. "12", "17.1")
+        if (/^\d+[.,]\d+$/.test(part)) return false;
+      }
+
       const norm = clean.toLowerCase();
       if (arrestingOfficers.has(norm)) return false;
-      if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор|паспорт|гражданин|досье|база|данных|правонарушителей|новости|правительство|правительства|сан|андреас|government|san|andreas)(?:_|$)/i.test(norm)) return false;
       return true;
     };
 

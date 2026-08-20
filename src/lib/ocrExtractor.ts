@@ -114,6 +114,19 @@ export function extractArrestingOfficers(rawText: string): Set<string> {
 export function extractName(rawText: string, passport?: string | null): string | null {
   if (!rawText) return null;
 
+  const BLOCKED_WORDS = new Set([
+    'database', 'gov', 'gta5', 'gta', 'rp', 'lspd', 'fbi', 'fib', 'usss', 'sasp', 'shpd', 'lscsd',
+    'redwood', 'jorno', 'vegas', 'police', 'sheriff', 'government', 'san', 'andreas',
+    'следственный', 'изолятор', 'паспорт', 'гражданин', 'досье', 'база', 'данных',
+    'правонарушителей', 'новости', 'правительство', 'правительства', 'сан', 'андреас',
+    'статья', 'статьи', 'дата', 'время', 'проводил', 'арест', 'напарник',
+    'розыск', 'штраф', 'наличные', 'тюрьма', 'организация', 'должность',
+    'прописка', 'гражданство', 'уровень', 'мужской', 'женский', 'пол',
+    'фио', 'фамилия', 'имя', 'отчество', 'surname', 'passport', 'name',
+    'номер', 'телефон', 'адрес', 'дело', 'судимость', 'судимости',
+    'id', 'lvl', 'age', 'level'
+  ]);
+
   let text = rawText;
 
   text = text.replace(/(\d{1,2}[.,:]\d{1,2}(?:[.,:]\d{2,4})?)/g, ' $1 ');
@@ -126,6 +139,24 @@ export function extractName(rawText: string, passport?: string | null): string |
 
   const arrestingOfficers = extractArrestingOfficers(rawText);
   const createRegex = () => /([a-zA-Zа-яА-ЯёЁ0-9]+(?:_[a-zA-Zа-яА-ЯёЁ0-9]+)+)/g;
+
+  const isValidName = (m: string): boolean => {
+    if (!/[a-zA-Zа-яА-ЯёЁ]/.test(m)) return false;
+    const parts = m.split('_').filter(Boolean);
+    if (parts.length < 2) return false;
+
+    for (const part of parts) {
+      const normPart = part.toLowerCase();
+      if (BLOCKED_WORDS.has(normPart)) return false;
+      if (/^\d+$/.test(part)) return false;
+      if (part.length < 2) return false;
+      if (/^\d+[.,]\d+$/.test(part)) return false;
+    }
+
+    const norm = m.toLowerCase();
+    if (arrestingOfficers.has(norm)) return false;
+    return true;
+  };
 
   let matches: string[] = [];
   let match;
@@ -161,14 +192,7 @@ export function extractName(rawText: string, passport?: string | null): string |
 
   if (matches.length === 0) return null;
 
-  let validName = matches.find(m => {
-    if (!/[a-zA-Zа-яА-ЯёЁ]/.test(m)) return false;
-    const norm = m.toLowerCase();
-    if (arrestingOfficers.has(norm)) return false;
-    // Strip watermarks and game overlay headers
-    if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор|база|данных|правонарушителей|новости|правительство|правительства|сан|андреас|government|san|andreas)(?:_|$)/i.test(norm)) return false;
-    return true;
-  });
+  let validName = matches.find(m => isValidName(m));
 
   if (!validName) return null;
 
