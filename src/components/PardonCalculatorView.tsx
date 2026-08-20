@@ -1204,23 +1204,23 @@ export default function PardonCalculatorView() {
                             value={row.date}
                             onChange={e => handleUpdateRow(row.id, 'date', e.target.value)}
                             placeholder="ДД.ММ.ГГГГ"
-                            className="glass-input rounded-xl px-3.5 py-2 text-sm sm:text-base text-zinc-200 font-mono w-32"
+                            className="glass-input rounded-xl px-3 py-2 text-sm sm:text-base text-zinc-200 font-mono w-full min-w-[90px] max-w-[110px]"
                           />
                         </td>
 
                         {/* TIME */}
-                        <td className="py-3.5 px-3">
+                        <td className="py-3.5 px-2">
                           <input
                             type="text"
                             value={row.time}
                             onChange={e => handleUpdateRow(row.id, 'time', e.target.value)}
                             placeholder="ЧЧ:ММ"
-                            className="glass-input rounded-xl px-3.5 py-2 text-sm sm:text-base text-zinc-200 font-mono w-24"
+                            className="glass-input rounded-xl px-3 py-2 text-sm sm:text-base text-zinc-200 font-mono w-full min-w-[70px] max-w-[80px]"
                           />
                         </td>
 
                         {/* SEVERITY */}
-                        <td className="py-3.5 px-3">
+                        <td className="py-3.5 px-2 w-full min-w-[140px] max-w-[200px]">
                           <CustomSelect
                             value={row.tyazhest}
                             onChange={val => handleUpdateRow(row.id, 'tyazhest', val)}
@@ -1233,19 +1233,19 @@ export default function PardonCalculatorView() {
                         </td>
 
                         {/* PRICE */}
-                        <td className="py-3.5 px-3 text-right font-mono font-extrabold text-base sm:text-lg text-white">
+                        <td className="py-3.5 px-2 text-right font-mono font-extrabold text-sm sm:text-base text-white">
                           {row.price ? `$${row.price.toLocaleString('ru-RU')}` : '—'}
                         </td>
 
                         {/* STATUS */}
-                        <td className="py-3.5 px-3 text-right">
-                          <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border ${
+                        <td className="py-3.5 px-2 text-right whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-1.5 rounded-full text-xs font-bold border ${
                             row.isBlocked 
                               ? 'bg-zinc-800/70 border-white/10 text-zinc-400' 
                               : 'bg-white/10 border-white/25 text-white shadow-sm'
                           }`}>
                             {row.isBlocked ? <Clock className="w-3.5 h-3.5 text-zinc-400" /> : <Check className="w-3.5 h-3.5 text-white" />}
-                            {row.statusText}
+                            <span>{row.statusText}</span>
                           </span>
                         </td>
                       </tr>
