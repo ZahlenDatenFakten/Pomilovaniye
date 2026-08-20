@@ -12,7 +12,7 @@ export const CONFIG = {
     'фио', 'паспорт', 'фамилия', 'уровень', 'мужской', 'женский',
     'гражданство', 'прописка', 'организация', 'должность',
     'passport', 'surname', 'статья', 'розыск', 'штраф', 'наличные',
-    'следственный', 'изолятор', 'тюрьма'
+    'следственный', 'изолятор', 'тюрьма', 'правительство', 'сан', 'андреас', 'government', 'san', 'andreas'
   ]
 };
 
@@ -166,7 +166,7 @@ export function extractName(rawText: string, passport?: string | null): string |
     const norm = m.toLowerCase();
     if (arrestingOfficers.has(norm)) return false;
     // Strip watermarks and game overlay headers
-    if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор|база|данных|правонарушителей|новости)(?:_|$)/i.test(norm)) return false;
+    if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор|база|данных|правонарушителей|новости|правительство|правительства|сан|андреас|government|san|andreas)(?:_|$)/i.test(norm)) return false;
     return true;
   });
 
@@ -263,12 +263,12 @@ export function parseTableRecords(rawText: string): ArrestRecord[] {
       .replace(/\b\d{1,2}[:;]\d{2}(?::\d{2})?\b/g, ' ')
       .replace(/\b\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?\b/g, ' ');
 
-    // Extract all articles from line (e.g. 12.1 12.8, 25.5, 17.1)
-    const articleRegex = /\b\d{1,2}\.\d{1,2}(?:\.\d{1,2})?\b/g;
+    // Extract all articles from line (e.g. 12.1 12.8, 25,5, 17.1)
+    const articleRegex = /\b\d{1,2}[.,-]\d{1,2}(?:[.,-]\d{1,2})?\b/g;
     const articles: string[] = [];
     let artMatch;
     while ((artMatch = articleRegex.exec(cleanLine)) !== null) {
-      const code = artMatch[0];
+      const code = artMatch[0].replace(/,/g, '.').replace(/-/g, '.');
       if (!code.startsWith('0')) {
         articles.push(code);
       }

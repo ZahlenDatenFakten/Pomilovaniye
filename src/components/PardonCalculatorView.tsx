@@ -1263,9 +1263,9 @@ export default function PardonCalculatorView() {
                 <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white font-mono tracking-tight">
                   ${finalSum.toLocaleString('ru-RU')}
                 </div>
-                {prevDebtNum + rawSum > TOTAL_CAP && (
-                  <p className="text-xs text-zinc-400 font-bold">
-                    Лимит $170k превышен
+                {rawSum > TOTAL_CAP && (
+                  <p className="text-[11px] text-amber-400/90 font-bold mt-2 bg-amber-500/10 inline-block px-2 py-1 rounded">
+                    Применён лимит $170k на одно дело
                   </p>
                 )}
               </div>
@@ -1328,7 +1328,7 @@ export default function PardonCalculatorView() {
             <button
               type="button"
               onClick={handleCopyReport}
-              className="w-full h-16 py-4.5 px-8 rounded-2xl bg-gradient-to-r from-white via-zinc-100 to-zinc-300 hover:from-zinc-100 hover:to-white text-black font-extrabold text-base sm:text-lg shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_40px_rgba(255,255,255,0.25)] transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-98"
+              className="w-full h-16 py-4.5 px-8 rounded-2xl bg-gradient-to-b from-zinc-200 to-zinc-400 hover:from-white hover:to-zinc-300 text-black border-t border-white/50 font-extrabold text-base sm:text-lg shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-98"
             >
               {copiedReport ? <Check className="w-6 h-6 text-black" /> : <Copy className="w-6 h-6 text-black" />}
               <span>{copiedReport ? '✓ Отчёт скопирован!' : 'Скопировать отчёт и применить'}</span>
