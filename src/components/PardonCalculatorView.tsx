@@ -1152,17 +1152,17 @@ export default function PardonCalculatorView() {
             </div>
 
             {/* TABLE */}
-            <div className="overflow-x-auto min-h-[200px]">
-              <table className="w-full text-left text-sm sm:text-base border-collapse min-w-[680px]">
+            <div className="w-full overflow-x-auto min-h-[200px] scrollbar-hide">
+              <table className="w-full text-left text-sm sm:text-base border-collapse">
                 <thead>
                   <tr className="border-b border-white/15 text-zinc-400 uppercase tracking-wider text-xs font-bold">
-                    <th className="pb-3.5 px-3 w-10 text-center"></th>
-                    <th className="pb-3.5 px-3">Статья</th>
-                    <th className="pb-3.5 px-3">Дата</th>
-                    <th className="pb-3.5 px-3">Время</th>
-                    <th className="pb-3.5 px-3 min-w-[190px]">Тяжесть</th>
-                    <th className="pb-3.5 px-3 text-right">Пошлина</th>
-                    <th className="pb-3.5 px-3 text-right">Статус</th>
+                    <th className="pb-3.5 px-2 w-10 text-center"></th>
+                    <th className="pb-3.5 px-2">Статья</th>
+                    <th className="pb-3.5 px-2">Дата</th>
+                    <th className="pb-3.5 px-2">Время</th>
+                    <th className="pb-3.5 px-2 w-48">Тяжесть</th>
+                    <th className="pb-3.5 px-2 text-right">Пошлина</th>
+                    <th className="pb-3.5 px-2 text-right">Статус</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -1179,7 +1179,7 @@ export default function PardonCalculatorView() {
                         className={`transition-colors ${row.isBlocked ? 'bg-white/[0.01]' : 'hover:bg-white/[0.03]'}`}
                       >
                         {/* DELETE */}
-                        <td className="py-3.5 px-3 text-center">
+                        <td className="py-3.5 px-2 text-center w-10">
                           <button
                             onClick={() => handleRemoveRow(row.id)}
                             className="p-2 rounded-xl text-zinc-500 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
@@ -1190,18 +1190,18 @@ export default function PardonCalculatorView() {
                         </td>
 
                         {/* CODE */}
-                        <td className="py-3.5 px-3">
+                        <td className="py-3.5 px-2">
                           <input
                             type="text"
                             value={row.code}
                             onChange={e => handleUpdateRow(row.id, 'code', e.target.value)}
                             placeholder="12.8"
-                            className="glass-input rounded-xl px-3.5 py-2 text-sm sm:text-base text-white font-mono font-bold w-36"
+                            className="glass-input rounded-xl px-3 py-2 text-sm sm:text-base text-white font-mono font-bold w-full max-w-[120px]"
                           />
                         </td>
 
                         {/* DATE */}
-                        <td className="py-3.5 px-3">
+                        <td className="py-3.5 px-2">
                           <input
                             type="text"
                             value={row.date}
