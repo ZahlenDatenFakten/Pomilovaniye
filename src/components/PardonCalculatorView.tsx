@@ -505,11 +505,27 @@ export default function PardonCalculatorView() {
     setIsAnalyzing(false);
   };
 
+  // Normalize date from GTA5RP database.gov (e.g. 18.08.20... / 18.08.2... -> 18.08.2026)
+  const normalizeDateStr = (rawDateStr: string): string => {
+    if (!rawDateStr) return '';
+    const clean = rawDateStr.replace(/[^\d.]/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$/g, '');
+    const parts = clean.split('.');
+    const currentYear = new Date().getFullYear().toString();
+
+    if (parts.length >= 2) {
+      const day = parts[0].padStart(2, '0');
+      const month = parts[1].padStart(2, '0');
+      let year = parts[2] || currentYear;
+      if (year.length < 4) {
+        year = currentYear;
+      }
+      return `${day}.${month}.${year}`;
+    }
+    return rawDateStr;
+  };
+
   // Ultra-robust Text Parsing Algorithm (Extracts citizen name & all articles cleanly)
   const parseTextToRows = (rawText: string) => {
-    const debugLog: string[] = [];
-    debugLog.push('=== НАЧАЛО ПАРСИНГА ===');
-
     // 1. EXTRACT ARRESTING OFFICERS TO AVOID ACCIDENTALLY PICKING THEM AS CITIZEN NAME
     const arrestingOfficers = new Set<string>();
     const linesForOfficers = rawText.split('\n');
@@ -535,7 +551,7 @@ export default function PardonCalculatorView() {
       if (!/[a-zA-Zа-яА-ЯёЁ]/.test(clean)) return false;
       const norm = clean.toLowerCase();
       if (arrestingOfficers.has(norm)) return false;
-      if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор|паспорт|гражданин|досье)(?:_|$)/i.test(norm)) return false;
+      if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор|паспорт|гражданин|досье|база|данных|правонарушителей|новости)(?:_|$)/i.test(norm)) return false;
       return true;
     };
 
@@ -543,7 +559,6 @@ export default function PardonCalculatorView() {
     const formatCandidate = (raw: string): string => {
       if (!raw) return '';
       let clean = raw.trim().replace(/[\s\.]+/g, '_');
-      // Strip common prefixes / suffixes
       clean = clean.replace(/^(?:ФИО|Имя|Паспорт|Пол|ID|Name|Passport)(?=[A-ZА-ЯЁ])/g, '');
       clean = clean.replace(/^(?:фио|имя|паспорт|пол)(?=[A-Za-z])/i, '');
       clean = clean.replace(/^(?:id|name|passport)(?=[А-Яа-яЁё])/i, '');
@@ -599,11 +614,8 @@ export default function PardonCalculatorView() {
     // Strategy B: Name adjacent to "Паспорт #" in dossier card (Right above, below, or glued)
     if (!foundName) {
       const nearPassPatterns = [
-        // Name directly before "Паспорт #123456"
         /([A-ZА-Яa-zа-я0-9]{2,20}[_\s]+[A-ZА-Яa-zа-я0-9]{2,20})[\r\n\s]*Паспорт\s*#?\s*(\d{4,8})/i,
-        // "Паспорт #123456" directly before Name
         /Паспорт\s*#?\s*(\d{4,8})[\r\n\s]*([A-ZА-Яa-zа-я0-9]{2,20}[_\s]+[A-ZА-Яa-zа-я0-9]{2,20})/i,
-        // Glued: "Misha_NavarovПаспорт #590831"
         /([A-ZА-Яa-zа-я0-9]{2,20}_[A-ZА-Яa-zа-я0-9]{2,20})Паспорт/i
       ];
 
@@ -637,18 +649,11 @@ export default function PardonCalculatorView() {
       }
     }
 
-    // Strategy D: Global pattern search with fuzzy word separation
+    // Strategy D: Global pattern search
     if (!foundName) {
-      let text = rawText
-        .replace(/(\d{1,2}[.,:]\d{1,2}(?:[.,:]\d{2,4})?)/g, ' $1 ')
-        .replace(/[:;.,!?|\\/(){}\[\]<>+="\-'`~#№]/g, ' $& ')
-        .replace(/(фио|паспорт|фамилия|уровень|мужской|женский|гражданство|прописка|организация|должность|passport|surname|статья|розыск|штраф|наличные)/gi, ' $1 ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
       const globalRegex = /([a-zA-Zа-яА-ЯёЁ0-9]{2,20}(?:_[a-zA-Zа-яА-ЯёЁ0-9]{2,20}|\s+[a-zA-Zа-яА-ЯёЁ0-9]{2,20}))/g;
       let m;
-      while ((m = globalRegex.exec(text)) !== null) {
+      while ((m = globalRegex.exec(rawText)) !== null) {
         if (isCitizenName(m[1])) {
           foundName = formatCandidate(m[1]);
           break;
@@ -661,36 +666,30 @@ export default function PardonCalculatorView() {
     setFioWarning(!foundName || foundName.length < 5);
 
     const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
-
     const newParsedRows: PardonArticleRow[] = [];
     const seen = new Set<string>();
     let currentSeq = rowSeq;
-    let lastDate = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const currentYear = new Date().getFullYear().toString();
+    let lastDate = `01.01.${currentYear}`;
     let lastTime = '12:00';
 
     lines.forEach((line) => {
       if (foundName && line.includes(foundName) && line.length < 50) return;
       if (/Паспорт/.test(line) && line.length < 50) return;
 
-      // Extract date and time if present in line
-      const dateMatch = line.match(/(\d{1,2}[:;.-]\d{2})\s+(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})/) ||
-                        line.match(/(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})\s+(\d{1,2}[:;.-]\d{2})/);
+      // Extract date and time if present in line (supporting truncated 18.08.20... / 18.08.2...)
+      const dtMatch = line.match(/(\d{1,2}[:;]\d{2})\s+(\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?)/) ||
+                      line.match(/(\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?)\s+(\d{1,2}[:;]\d{2})/);
 
-      if (dateMatch) {
-        let p1 = dateMatch[1], p2 = dateMatch[2];
-        if (p1.includes(':') || p1.includes(';') || p1.length <= 5) {
+      if (dtMatch) {
+        let p1 = dtMatch[1], p2 = dtMatch[2];
+        if (p1.includes(':') || p1.includes(';')) {
           lastTime = p1.replace(';', ':');
-          lastDate = p2.replace(/[/]/g, '.');
+          lastDate = normalizeDateStr(p2);
         } else {
-          lastDate = p1.replace(/[/]/g, '.');
+          lastDate = normalizeDateStr(p1);
           lastTime = p2.replace(';', ':');
         }
-      } else {
-        const standaloneDate = line.match(/\b(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})\b/);
-        if (standaloneDate) lastDate = standaloneDate[1].replace(/[/]/g, '.');
-
-        const standaloneTime = line.match(/\b(\d{1,2}[:;]\d{2}(?::\d{2})?)\b/);
-        if (standaloneTime) lastTime = standaloneTime[1].replace(';', ':');
       }
 
       // Check for special entries first
@@ -711,24 +710,23 @@ export default function PardonCalculatorView() {
         return;
       }
 
-      // STRIP OUT DATES, TIMES, PASSPORT NUMBERS AND 4-DIGIT YEARS SO THEY ARE NEVER PARSED AS ARTICLES
-      const sanitizedLine = line
-        .replace(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/g, ' ') // Strip full dates (e.g. 04.08.2026, 29.07.2026)
-        .replace(/\b\d{1,2}[:;]\d{2}(?::\d{2})?\b/g, ' ')     // Strip times (e.g. 14:32, 08:45)
-        .replace(/\b(19|20)\d{2}\b/g, ' ')                    // Strip 4-digit years (e.g. 2026)
-        .replace(/\b\d{5,7}\b/g, ' ');                         // Strip passport numbers (e.g. 437811)
+      // Clean out junk text and extract all article numbers
+      let cleanLine = line
+        .replace(/(?:следственн[а-я]+\s+изолятор|федеральн[а-я]+\s+тюрьма|тюрьма|fbi|lspd|fib|sasp|lscsd)/gi, ' ')
+        .replace(/\b(?:уак[- ]?са|уак|ук[- ]?са|ук|yak[- ]?sa|yak|uk)\b/gi, ' ')
+        .replace(/\b\d{1,2}[:;]\d{2}(?::\d{2})?\b/g, ' ')
+        .replace(/\b\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?\b/g, ' ')
+        .replace(/\b(19|20)\d{2}\b/g, ' ')
+        .replace(/\b\d{5,7}\b/g, ' ');
 
-      // Extract all article numbers (e.g. 15.6, 12.8, 17.1, 15.1.1)
-      const articleMatches = sanitizedLine.match(/\b\d{1,2}[.,-]\d{1,2}(?:[.,-]\d{1,2})?\b/g) || [];
-      articleMatches.forEach(rawCode => {
-        const code = rawCode.replace(/[,]/g, '.').replace(/[-]/g, '.');
-        if (!/\./.test(code)) return;
-
-        // Reject if first part has leading zero (e.g. 04.08, 08.45, 05.08) because UK/UAK articles never start with 0
-        if (/^0\d/.test(code)) return;
+      const articleRegex = /\b\d{1,2}\.\d{1,2}(?:\.\d{1,2})?\b/g;
+      let artMatch;
+      while ((artMatch = articleRegex.exec(cleanLine)) !== null) {
+        const code = artMatch[0];
+        if (code.startsWith('0')) continue;
 
         const key = normKey(code) + '|' + lastDate + '|' + lastTime;
-        if (seen.has(key)) return;
+        if (seen.has(key)) continue;
         seen.add(key);
 
         const ty = severityDict[normKey(code)] || SEED_SEVERITY[code] || 'medium';
@@ -739,7 +737,7 @@ export default function PardonCalculatorView() {
           time: lastTime,
           tyazhest: ty
         });
-      });
+      }
     });
 
     setRowSeq(currentSeq);
@@ -820,7 +818,6 @@ export default function PardonCalculatorView() {
   });
 
   const prevDebtNum = Math.max(0, Number(previousDebt) || 0);
-  // Each individual pardon has its own independent limit of $170,000
   const finalSum = Math.min(rawSum, TOTAL_CAP);
   const totalDailyDebt = prevDebtNum + finalSum;
   const treasurySum = Math.round(totalDailyDebt * 0.85);
@@ -833,14 +830,12 @@ export default function PardonCalculatorView() {
     navigator.clipboard.writeText(reportText).then(() => {
       setCopiedReport(true);
 
-      // ── Stack accumulative daily debt & persist to localStorage ──
       const newAccumulated = totalDailyDebt.toString();
       setPreviousDebt(newAccumulated);
       try {
         localStorage.setItem('pardon_daily_accumulated_debt', newAccumulated);
       } catch (e) {}
 
-      // ── Auto-clear current person's fields for next report ──
       setFio('');
       setPassport('');
       setRows([]);
@@ -849,9 +844,7 @@ export default function PardonCalculatorView() {
       setManualText('');
       setShowOcrPreview(false);
       setShowDebug(false);
-      notifyToast('Отчёт скопирован! Суточный долг обновлён!', 'success');
-
-      setTimeout(() => setCopiedReport(false), 3000);
+      notifyToast('Все поля калькулятора очищены', 'info');
     });
   };
 
@@ -869,7 +862,7 @@ export default function PardonCalculatorView() {
   };
 
   return (
-    <div className="space-y-4 pb-12">
+    <div className="space-y-6 pb-16">
       {/* FLOATING GLASS TOAST NOTIFICATION */}
       <AnimatePresence>
         {toast && (
@@ -878,64 +871,63 @@ export default function PardonCalculatorView() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-[#111116]/95 border border-white/20 shadow-2xl backdrop-blur-2xl text-xs font-semibold tracking-wide text-white"
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-full bg-[#101015]/95 border border-white/20 shadow-2xl backdrop-blur-2xl text-sm font-semibold tracking-wide text-white"
           >
-            {toast.type === 'success' && <Check className="w-4 h-4 text-white shrink-0" />}
-            {toast.type === 'error' && <AlertTriangle className="w-4 h-4 text-zinc-400 shrink-0" />}
-            {toast.type === 'info' && <Award className="w-4 h-4 text-zinc-300 shrink-0" />}
+            {toast.type === 'success' && <Check className="w-4.5 h-4.5 text-white shrink-0" />}
+            {toast.type === 'error' && <AlertTriangle className="w-4.5 h-4.5 text-zinc-400 shrink-0" />}
+            {toast.type === 'info' && <Award className="w-4.5 h-4.5 text-zinc-300 shrink-0" />}
             <span>{toast.message}</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* COMPACT EXECUTIVE HEADER */}
-      <header className="glass-panel rounded-2xl px-5 py-3.5 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-white shrink-0">
-            <Award className="w-4.5 h-4.5" />
+      {/* COMPACT EXECUTIVE HEADER WITH GRADIENT ACCENTS */}
+      <header className="glass-panel rounded-3xl p-5 sm:p-6 flex items-center justify-between gap-4 relative overflow-hidden">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center text-white shrink-0 shadow-lg shadow-white/5">
+            <Award className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-white tracking-tight">
+              <h1 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
                 Помилования
               </h1>
-              <span className="text-zinc-600 text-xs">•</span>
-              <span className="text-[11px] font-medium text-zinc-400 font-mono">SA-GOV</span>
+              <span className="text-zinc-600 text-sm">•</span>
+              <span className="text-xs font-semibold text-zinc-400 font-mono">SA-GOV</span>
             </div>
-            <p className="text-[11px] text-zinc-400">Калькулятор пошлины и реестр снятия судимостей</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Калькулятор пошлины и реестр снятия судимостей</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 text-zinc-300 text-xs font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-white" />
+          <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/10 text-zinc-300 text-xs font-mono">
+            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
             <span>Лимит: $170,000 / 24ч</span>
           </div>
 
           <button
             onClick={handleResetAll}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/10 transition-all text-xs font-semibold cursor-pointer active:scale-95"
-            title="Очистить все поля"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.09] text-zinc-200 hover:text-white border border-white/10 hover:border-white/20 transition-all text-xs sm:text-sm font-semibold cursor-pointer active:scale-95 shadow-sm"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-zinc-400" />
-            <span>Очистить</span>
+            <RefreshCw className="w-4 h-4 text-zinc-400" />
+            <span>Очистить всё</span>
           </button>
         </div>
       </header>
 
       {/* MAIN TWO-COLUMN WORKSPACE */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
         
-        {/* ── LEFT COLUMN: INPUTS & OCR & ARTICLES TABLE ── */}
-        <div className="xl:col-span-7 space-y-4">
+        {/* ── LEFT COLUMN: CITIZEN INPUTS & SCANNER & CONVICTIONS TABLE ── */}
+        <div className="xl:col-span-7 space-y-5">
           
           {/* CARD 1: CITIZEN & OCR SCANNER */}
-          <section className="glass-panel rounded-2xl p-4 sm:p-5 space-y-4">
+          <section className="glass-panel rounded-3xl p-5 sm:p-6 space-y-5">
             {/* ROW 1: CITIZEN NAME & PASSPORT */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-bold text-zinc-300 mb-1">
-                  Имя Фамилия <span className="text-zinc-400 font-normal font-mono">(Name_Surname)</span>
+                <label className="block text-xs font-bold text-zinc-300 mb-1.5 uppercase tracking-wider">
+                  Имя Фамилия <span className="text-zinc-500 font-normal font-mono lowercase">(Name_Surname)</span>
                 </label>
                 <input
                   type="text"
@@ -945,19 +937,19 @@ export default function PardonCalculatorView() {
                     setFio(e.target.value);
                     setFioWarning(false);
                   }}
-                  className={`w-full glass-input rounded-xl px-3.5 py-2 text-xs text-white font-medium ${
-                    fioWarning ? 'border-zinc-400 ring-1 ring-zinc-400/30' : ''
+                  className={`w-full glass-input rounded-xl px-4 py-2.5 sm:py-3 text-sm text-white font-medium ${
+                    fioWarning ? 'border-zinc-400 ring-2 ring-zinc-400/20' : ''
                   }`}
                 />
                 {fioWarning && (
-                  <p className="text-[10px] text-zinc-300 mt-1 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3 text-zinc-400 shrink-0" /> Проверьте корректность имени
+                  <p className="text-xs text-zinc-300 mt-1.5 flex items-center gap-1.5 font-medium">
+                    <AlertTriangle className="w-3.5 h-3.5 text-zinc-400 shrink-0" /> Проверьте корректность имени
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-zinc-300 mb-1">
+                <label className="block text-xs font-bold text-zinc-300 mb-1.5 uppercase tracking-wider">
                   Номер паспорта
                 </label>
                 <input
@@ -965,25 +957,25 @@ export default function PardonCalculatorView() {
                   placeholder="601226"
                   value={passport}
                   onChange={e => setPassport(e.target.value)}
-                  className="w-full glass-input rounded-xl px-3.5 py-2 text-xs font-mono text-white font-semibold"
+                  className="w-full glass-input rounded-xl px-4 py-2.5 sm:py-3 text-sm font-mono text-white font-semibold"
                 />
               </div>
             </div>
 
             {/* ROW 2: DAILY DEBT & OCR DROPZONE */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-white/[0.06]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-white/[0.06]">
               {/* Daily debt block */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[11px] font-bold text-zinc-300">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
                     Суточный долг ($)
                   </label>
                   <button
                     type="button"
                     onClick={handleResetDailyDebt}
-                    className="text-[10px] text-zinc-400 hover:text-white font-mono flex items-center gap-1 cursor-pointer"
+                    className="text-xs text-zinc-400 hover:text-white font-mono flex items-center gap-1 cursor-pointer transition-colors"
                   >
-                    <RefreshCw className="w-2.5 h-2.5" />
+                    <RefreshCw className="w-3 h-3" />
                     <span>Сброс в $0</span>
                   </button>
                 </div>
@@ -993,36 +985,36 @@ export default function PardonCalculatorView() {
                   placeholder="0"
                   value={previousDebt}
                   onChange={e => setPreviousDebt(e.target.value)}
-                  className="w-full glass-input rounded-xl px-3.5 py-2 text-xs font-mono text-zinc-200 font-bold"
+                  className="w-full glass-input rounded-xl px-4 py-2.5 sm:py-3 text-sm font-mono text-zinc-100 font-bold"
                 />
               </div>
 
               {/* Compact OCR Trigger / Dropzone */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[11px] font-bold text-zinc-300 flex items-center gap-1.5">
-                    <FileSearch className="w-3 h-3 text-zinc-400" />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileSearch className="w-3.5 h-3.5 text-zinc-400" />
                     Скриншот базы
                   </label>
-                  <div className="flex items-center gap-1 bg-black/40 p-0.5 rounded-md border border-white/10 text-[10px]">
+                  <div className="flex items-center gap-1 bg-black/50 p-0.5 rounded-lg border border-white/10 text-xs">
                     <button
                       type="button"
                       onClick={() => setCurrentMethod('tesseract')}
-                      className={`px-1.5 py-0.5 rounded cursor-pointer ${currentMethod === 'tesseract' ? 'bg-white/20 text-white font-bold' : 'text-zinc-400'}`}
+                      className={`px-2.5 py-0.5 rounded-md cursor-pointer transition-all ${currentMethod === 'tesseract' ? 'bg-white/20 text-white font-bold' : 'text-zinc-400'}`}
                     >
                       OCR
                     </button>
                     <button
                       type="button"
                       onClick={() => setCurrentMethod('groq')}
-                      className={`px-1.5 py-0.5 rounded cursor-pointer ${currentMethod === 'groq' ? 'bg-white/20 text-white font-bold' : 'text-zinc-400'}`}
+                      className={`px-2.5 py-0.5 rounded-md cursor-pointer transition-all ${currentMethod === 'groq' ? 'bg-white/20 text-white font-bold' : 'text-zinc-400'}`}
                     >
                       AI
                     </button>
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2.5">
                   <div
                     onClick={() => fileInputRef.current?.click()}
                     onDragOver={e => e.preventDefault()}
@@ -1030,8 +1022,8 @@ export default function PardonCalculatorView() {
                       e.preventDefault();
                       if (e.dataTransfer.files?.[0]) handleImageFile(e.dataTransfer.files[0]);
                     }}
-                    className={`flex-1 glass-input rounded-xl px-3 py-2 text-center cursor-pointer transition-all flex items-center justify-center gap-2 ${
-                      imagePreview ? 'border-white/30 bg-white/[0.04]' : 'hover:border-white/20'
+                    className={`flex-1 glass-input rounded-xl px-3.5 py-2.5 text-center cursor-pointer transition-all flex items-center justify-center gap-2 ${
+                      imagePreview ? 'border-white/30 bg-white/[0.05]' : 'hover:border-white/25'
                     }`}
                   >
                     <input
@@ -1041,9 +1033,9 @@ export default function PardonCalculatorView() {
                       className="hidden"
                       onChange={e => e.target.files?.[0] && handleImageFile(e.target.files[0])}
                     />
-                    <Upload className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                    <span className="text-[11px] text-zinc-300 truncate font-medium">
-                      {imagePreview ? 'Файл готов' : 'Скриншот (Ctrl+V)'}
+                    <Upload className="w-4 h-4 text-zinc-400 shrink-0" />
+                    <span className="text-xs text-zinc-300 truncate font-medium">
+                      {imagePreview ? 'Скриншот готов' : 'Скриншот (Ctrl+V)'}
                     </span>
                   </div>
 
@@ -1051,7 +1043,7 @@ export default function PardonCalculatorView() {
                     type="button"
                     onClick={handleAnalyzeImage}
                     disabled={isAnalyzing || !uploadedBase64}
-                    className="px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                    className="px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-extrabold text-xs sm:text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0 shadow-lg shadow-white/5 active:scale-95"
                   >
                     {isAnalyzing ? '...' : 'Распознать'}
                   </button>
@@ -1061,39 +1053,45 @@ export default function PardonCalculatorView() {
 
             {/* OCR PROGRESS */}
             {isAnalyzing && (
-              <div className="w-full bg-black/50 rounded-full h-1.5 overflow-hidden border border-white/10">
-                <div 
-                  className="bg-white h-full transition-all duration-200" 
-                  style={{ width: `${ocrProgress}%` }} 
-                />
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs text-zinc-400">
+                  <span>Сканирование базы данных...</span>
+                  <span>{Math.round(ocrProgress)}%</span>
+                </div>
+                <div className="w-full bg-black/50 rounded-full h-2 overflow-hidden border border-white/10">
+                  <div 
+                    className="bg-gradient-to-r from-white via-zinc-200 to-zinc-400 h-full transition-all duration-200 shadow-md shadow-white/20" 
+                    style={{ width: `${ocrProgress}%` }} 
+                  />
+                </div>
               </div>
             )}
 
             {statusMessage && (
-              <p className={`text-[11px] text-center font-medium ${statusColor === 'red' ? 'text-zinc-400' : 'text-zinc-200'}`}>
+              <p className={`text-xs text-center font-medium ${statusColor === 'red' ? 'text-rose-400' : 'text-zinc-200'}`}>
                 {statusMessage}
               </p>
             )}
 
             {/* COLLAPSIBLE ADVANCED SETTINGS */}
-            <details className="text-xs group border-t border-white/[0.06] pt-2">
-              <summary className="text-[11px] text-zinc-400 hover:text-white cursor-pointer flex items-center justify-between py-1">
+            <details className="text-xs group border-t border-white/[0.06] pt-3">
+              <summary className="text-xs text-zinc-400 hover:text-white cursor-pointer flex items-center justify-between py-1 font-semibold">
                 <span>Ручной ввод текста / Groq API ключ</span>
-                <ChevronDown className="w-3.5 h-3.5 text-zinc-500 group-open:rotate-180 transition-transform" />
+                <ChevronDown className="w-4 h-4 text-zinc-500 group-open:rotate-180 transition-transform" />
               </summary>
-              <div className="pt-2 space-y-2.5">
+              <div className="pt-3 space-y-3">
                 <textarea
                   rows={2}
                   value={manualText}
                   onChange={e => setManualText(e.target.value)}
-                  className="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-zinc-200"
+                  className="w-full glass-input rounded-xl p-3 text-xs font-mono text-zinc-200"
                   placeholder="Вставьте сырой текст для парсинга..."
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-2.5">
                   <button
                     type="button"
                     onClick={() => parseTextToRows(manualText)}
-                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-[11px] font-semibold transition-all cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-all cursor-pointer"
                   >
                     Разобрать текст
                   </button>
@@ -1102,7 +1100,7 @@ export default function PardonCalculatorView() {
                     placeholder="Groq API Key (gsk_...)"
                     value={apiKey}
                     onChange={e => handleApiKeyChange(e.target.value)}
-                    className="flex-1 glass-input rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-zinc-300"
+                    className="flex-1 glass-input rounded-xl px-3 py-2 text-xs font-mono text-zinc-300"
                   />
                 </div>
               </div>
@@ -1110,13 +1108,13 @@ export default function PardonCalculatorView() {
           </section>
 
           {/* CARD 2: CONVICTION ARTICLES TABLE */}
-          <section className="glass-panel rounded-2xl p-4 sm:p-5 space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+          <section className="glass-panel rounded-3xl p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
                   Статьи в судимости
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-white/10 text-[10px] font-mono text-zinc-300 font-bold">
+                <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-xs font-mono text-zinc-300 font-bold">
                   {rowCalculations.length}
                 </span>
               </div>
@@ -1124,32 +1122,32 @@ export default function PardonCalculatorView() {
               <button
                 type="button"
                 onClick={handleAddManualRow}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-bold transition-all cursor-pointer border border-white/10 active:scale-95"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
                 <span>Добавить статью</span>
               </button>
             </div>
 
             {/* TABLE */}
-            <div className="overflow-x-auto min-h-[160px]">
-              <table className="w-full text-left text-xs border-collapse min-w-[580px]">
+            <div className="overflow-x-auto min-h-[180px]">
+              <table className="w-full text-left text-xs sm:text-sm border-collapse min-w-[620px]">
                 <thead>
-                  <tr className="border-b border-white/10 text-zinc-400 uppercase tracking-wider text-[10px] font-bold">
-                    <th className="pb-2 px-2 w-8 text-center"></th>
-                    <th className="pb-2 px-2">Статья</th>
-                    <th className="pb-2 px-2">Дата</th>
-                    <th className="pb-2 px-2">Время</th>
-                    <th className="pb-2 px-2 min-w-[150px]">Тяжесть</th>
-                    <th className="pb-2 px-2 text-right">Пошлина</th>
-                    <th className="pb-2 px-2 text-right">Статус</th>
+                  <tr className="border-b border-white/10 text-zinc-400 uppercase tracking-wider text-[11px] font-bold">
+                    <th className="pb-3 px-2.5 w-8 text-center"></th>
+                    <th className="pb-3 px-2.5">Статья</th>
+                    <th className="pb-3 px-2.5">Дата</th>
+                    <th className="pb-3 px-2.5">Время</th>
+                    <th className="pb-3 px-2.5 min-w-[170px]">Тяжесть</th>
+                    <th className="pb-3 px-2.5 text-right">Пошлина</th>
+                    <th className="pb-3 px-2.5 text-right">Статус</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {rowCalculations.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-zinc-500 text-xs italic">
-                        Статьи не добавлены. Загрузите скриншот или нажмите «Добавить статью».
+                      <td colSpan={7} className="py-10 text-center text-zinc-500 text-xs sm:text-sm italic">
+                        Статьи не добавлены. Загрузите скриншот базы данных или нажмите «Добавить статью».
                       </td>
                     </tr>
                   ) : (
@@ -1159,51 +1157,51 @@ export default function PardonCalculatorView() {
                         className={`transition-colors ${row.isBlocked ? 'bg-white/[0.01]' : 'hover:bg-white/[0.03]'}`}
                       >
                         {/* DELETE */}
-                        <td className="py-2.5 px-2 text-center">
+                        <td className="py-3 px-2.5 text-center">
                           <button
                             onClick={() => handleRemoveRow(row.id)}
-                            className="p-1 rounded text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                             title="Удалить"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
 
                         {/* CODE */}
-                        <td className="py-2.5 px-2">
+                        <td className="py-3 px-2.5">
                           <input
                             type="text"
                             value={row.code}
                             onChange={e => handleUpdateRow(row.id, 'code', e.target.value)}
                             placeholder="12.8"
-                            className="glass-input rounded-lg px-2.5 py-1 text-xs text-white font-mono font-bold w-28"
+                            className="glass-input rounded-lg px-3 py-1.5 text-xs sm:text-sm text-white font-mono font-bold w-32"
                           />
                         </td>
 
                         {/* DATE */}
-                        <td className="py-2.5 px-2">
+                        <td className="py-3 px-2.5">
                           <input
                             type="text"
                             value={row.date}
                             onChange={e => handleUpdateRow(row.id, 'date', e.target.value)}
                             placeholder="ДД.ММ.ГГГГ"
-                            className="glass-input rounded-lg px-2.5 py-1 text-xs text-zinc-200 font-mono w-24"
+                            className="glass-input rounded-lg px-3 py-1.5 text-xs sm:text-sm text-zinc-200 font-mono w-28"
                           />
                         </td>
 
                         {/* TIME */}
-                        <td className="py-2.5 px-2">
+                        <td className="py-3 px-2.5">
                           <input
                             type="text"
                             value={row.time}
                             onChange={e => handleUpdateRow(row.id, 'time', e.target.value)}
                             placeholder="ЧЧ:ММ"
-                            className="glass-input rounded-lg px-2 py-1 text-xs text-zinc-200 font-mono w-16"
+                            className="glass-input rounded-lg px-3 py-1.5 text-xs sm:text-sm text-zinc-200 font-mono w-20"
                           />
                         </td>
 
                         {/* SEVERITY */}
-                        <td className="py-2.5 px-2">
+                        <td className="py-3 px-2.5">
                           <CustomSelect
                             value={row.tyazhest}
                             onChange={val => handleUpdateRow(row.id, 'tyazhest', val)}
@@ -1216,18 +1214,18 @@ export default function PardonCalculatorView() {
                         </td>
 
                         {/* PRICE */}
-                        <td className="py-2.5 px-2 text-right font-mono font-bold text-white">
+                        <td className="py-3 px-2.5 text-right font-mono font-bold text-sm sm:text-base text-white">
                           {row.price ? `$${row.price.toLocaleString('ru-RU')}` : '—'}
                         </td>
 
                         {/* STATUS */}
-                        <td className="py-2.5 px-2 text-right">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                        <td className="py-3 px-2.5 text-right">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
                             row.isBlocked 
                               ? 'bg-zinc-800/60 border-white/10 text-zinc-400' 
                               : 'bg-white/10 border-white/20 text-white'
                           }`}>
-                            {row.isBlocked ? <Clock className="w-2.5 h-2.5 text-zinc-400" /> : <Check className="w-2.5 h-2.5 text-white" />}
+                            {row.isBlocked ? <Clock className="w-3 h-3 text-zinc-400" /> : <Check className="w-3 h-3 text-white" />}
                             {row.statusText}
                           </span>
                         </td>
@@ -1241,26 +1239,26 @@ export default function PardonCalculatorView() {
         </div>
 
         {/* ── RIGHT COLUMN: STICKY FINANCIAL SUMMARY & REPORT (NO SCROLLING NEEDED!) ── */}
-        <div className="xl:col-span-5 xl:sticky xl:top-4 space-y-4">
-          <section className="glass-panel rounded-2xl p-5 space-y-4 border border-white/12 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-4.5 h-4.5 text-white" />
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+        <div className="xl:col-span-5 xl:sticky xl:top-6 space-y-5">
+          <section className="glass-panel rounded-3xl p-6 sm:p-7 space-y-5 border border-white/15 shadow-2xl relative overflow-hidden">
+            <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.07]">
+              <div className="flex items-center gap-2.5">
+                <DollarSign className="w-5 h-5 text-white" />
+                <h2 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider">
                   Финансовый итог
                 </h2>
               </div>
-              <span className="text-[11px] font-mono text-zinc-400">Распределение</span>
+              <span className="text-xs font-mono text-zinc-400">Распределение</span>
             </div>
 
             {/* 4 STAT TILES (2x2 GRID) */}
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 gap-3.5">
               {/* CURRENT PARDON */}
-              <div className="glass-panel-subtle rounded-xl p-3.5 border border-white/10 space-y-1">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+              <div className="glass-panel-subtle rounded-2xl p-4 sm:p-4.5 border border-white/10 space-y-1.5 glass-card-hover">
+                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">
                   Текущее помилование
                 </span>
-                <div className="text-xl font-extrabold text-white font-mono">
+                <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
                   ${finalSum.toLocaleString('ru-RU')}
                 </div>
                 {prevDebtNum + rawSum > TOTAL_CAP && (
@@ -1271,11 +1269,11 @@ export default function PardonCalculatorView() {
               </div>
 
               {/* TOTAL DAILY DEBT */}
-              <div className="glass-panel-subtle rounded-xl p-3.5 border border-white/10 space-y-1">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
-                  Итоговый суточный долг
+              <div className="glass-panel-subtle rounded-2xl p-4 sm:p-4.5 border border-white/10 space-y-1.5 glass-card-hover">
+                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">
+                  Итоговый долг
                 </span>
-                <div className="text-xl font-extrabold text-white font-mono">
+                <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
                   ${totalDailyDebt.toLocaleString('ru-RU')}
                 </div>
                 <p className="text-[10px] text-zinc-500 font-mono">
@@ -1284,42 +1282,42 @@ export default function PardonCalculatorView() {
               </div>
 
               {/* TREASURY */}
-              <div className="glass-panel-subtle rounded-xl p-3.5 border border-white/10 space-y-1">
+              <div className="glass-panel-subtle rounded-2xl p-4 sm:p-4.5 border border-white/10 space-y-1.5 glass-card-hover">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                  <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
                     В казну (85%)
                   </span>
-                  <Building className="w-3.5 h-3.5 text-zinc-500" />
+                  <Building className="w-4 h-4 text-zinc-500" />
                 </div>
-                <div className="text-lg font-bold text-white font-mono">
+                <div className="text-xl sm:text-2xl font-bold text-white font-mono">
                   ${treasurySum.toLocaleString('ru-RU')}
                 </div>
               </div>
 
               {/* OFFICER FEE */}
-              <div className="glass-panel-subtle rounded-xl p-3.5 border border-white/10 space-y-1">
+              <div className="glass-panel-subtle rounded-2xl p-4 sm:p-4.5 border border-white/10 space-y-1.5 glass-card-hover">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                  <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">
                     Себе (15%)
                   </span>
-                  <Award className="w-3.5 h-3.5 text-zinc-400" />
+                  <Award className="w-4 h-4 text-zinc-300" />
                 </div>
-                <div className="text-lg font-bold text-white font-mono">
+                <div className="text-xl sm:text-2xl font-bold text-white font-mono">
                   ${selfSum.toLocaleString('ru-RU')}
                 </div>
               </div>
             </div>
 
             {/* REPORT LIVE PREVIEW */}
-            <div className="space-y-2 pt-1">
+            <div className="space-y-2 pt-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
                   Отчёт для реестра
                 </span>
-                <span className="text-[10px] text-zinc-500 font-mono">Готов к отправке</span>
+                <span className="text-[11px] text-zinc-500 font-mono">Готов к отправке</span>
               </div>
 
-              <div className="glass-input rounded-xl p-3 text-xs font-mono text-zinc-200 whitespace-pre-line leading-relaxed border border-white/10 select-all">
+              <div className="glass-input rounded-2xl p-4 text-xs sm:text-sm font-mono text-zinc-200 whitespace-pre-line leading-relaxed border border-white/10 select-all shadow-inner">
                 {reportText}
               </div>
             </div>
@@ -1328,10 +1326,10 @@ export default function PardonCalculatorView() {
             <button
               type="button"
               onClick={handleCopyReport}
-              className="w-full py-3.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-extrabold text-xs sm:text-sm shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-white via-zinc-100 to-zinc-300 hover:from-zinc-100 hover:to-white text-black font-extrabold text-sm sm:text-base shadow-[0_0_25px_rgba(255,255,255,0.12)] hover:shadow-[0_0_35px_rgba(255,255,255,0.22)] transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-98"
             >
-              {copiedReport ? <Check className="w-4 h-4 text-black" /> : <Copy className="w-4 h-4 text-black" />}
-              <span>{copiedReport ? 'Отчёт скопирован!' : 'Скопировать отчёт и применить'}</span>
+              {copiedReport ? <Check className="w-5 h-5 text-black" /> : <Copy className="w-5 h-5 text-black" />}
+              <span>{copiedReport ? '✓ Отчёт скопирован!' : 'Скопировать отчёт и применить'}</span>
             </button>
           </section>
         </div>

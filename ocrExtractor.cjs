@@ -132,8 +132,8 @@ function extractName(rawText, passport) {
     if (!/[a-zA-Zа-яА-ЯёЁ]/.test(m)) return false;
     const norm = m.toLowerCase();
     if (arrestingOfficers.has(norm)) return false;
-    // Используем точные границы слов/частей, чтобы не матчить "rp" внутри "Morphy"
-    if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор)(?:_|$)/i.test(m)) return false;
+    // Strip watermarks and game overlay headers
+    if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор|база|данных|правонарушителей|новости)(?:_|$)/i.test(m)) return false;
     return true;
   });
 
@@ -166,10 +166,88 @@ function extractData(rawText) {
   return { name, passport };
 }
 
+function normalizeDate(rawDateStr) {
+  if (!rawDateStr) return '';
+  const clean = rawDateStr.replace(/[^\d.]/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$/g, '');
+  const parts = clean.split('.');
+  const currentYear = new Date().getFullYear().toString();
+
+  if (parts.length >= 2) {
+    const day = parts[0].padStart(2, '0');
+    const month = parts[1].padStart(2, '0');
+    let year = parts[2] || currentYear;
+    if (year.length < 4) {
+      year = currentYear;
+    }
+    return `${day}.${month}.${year}`;
+  }
+  return rawDateStr;
+}
+
+function parseTableRecords(rawText) {
+  const records = [];
+  if (!rawText) return records;
+
+  const currentYear = new Date().getFullYear().toString();
+  const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+
+  let lastTime = '12:00';
+  let lastDate = `01.01.${currentYear}`;
+
+  lines.forEach(line => {
+    const dtMatch = line.match(/(\d{1,2}[:;]\d{2})\s+(\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?)/) ||
+                    line.match(/(\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?)\s+(\d{1,2}[:;]\d{2})/);
+
+    if (dtMatch) {
+      let p1 = dtMatch[1], p2 = dtMatch[2];
+      if (p1.includes(':') || p1.includes(';')) {
+        lastTime = p1.replace(';', ':');
+        lastDate = normalizeDate(p2);
+      } else {
+        lastDate = normalizeDate(p1);
+        lastTime = p2.replace(';', ':');
+      }
+    }
+
+    let cleanLine = line
+      .replace(/(?:следственн[а-я]+\s+изолятор|федеральн[а-я]+\s+тюрьма|тюрьма|fbi|lspd|fib|sasp|lscsd)/gi, ' ')
+      .replace(/\b(?:уак[- ]?са|уак|ук[- ]?са|ук|yak[- ]?sa|yak|uk)\b/gi, ' ')
+      .replace(/\b\d{1,2}[:;]\d{2}(?::\d{2})?\b/g, ' ')
+      .replace(/\b\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?\b/g, ' ')
+      .replace(/\b(19|20)\d{2}\b/g, ' ')
+      .replace(/\b\d{5,7}\b/g, ' ');
+
+    const articleRegex = /\b\d{1,2}\.\d{1,2}(?:\.\d{1,2})?\b/g;
+    const articles = [];
+    let artMatch;
+    while ((artMatch = articleRegex.exec(cleanLine)) !== null) {
+      const code = artMatch[0];
+      if (!code.startsWith('0')) {
+        articles.push(code);
+      }
+    }
+
+    articles.forEach(art => {
+      records.push({
+        time: lastTime,
+        date: lastDate,
+        article: art,
+        officer: '',
+        jail: 'Следственный изолятор'
+      });
+    });
+  });
+
+  return records;
+}
+
 module.exports = {
   CONFIG,
   formatName,
   extractPassport,
   extractName,
-  extractData
+  extractData,
+  normalizeDate,
+  parseTableRecords
 };
+

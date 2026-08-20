@@ -165,7 +165,8 @@ export function extractName(rawText: string, passport?: string | null): string |
     if (!/[a-zA-Zа-яА-ЯёЁ]/.test(m)) return false;
     const norm = m.toLowerCase();
     if (arrestingOfficers.has(norm)) return false;
-    if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор)(?:_|$)/i.test(m)) return false;
+    // Strip watermarks and game overlay headers
+    if (/(?:^|_)(?:database|gov|gta5|rp|lspd|fbi|fib|usss|sasp|redwood|jorno|vegas|police|sheriff|следственный|изолятор|база|данных|правонарушителей|новости)(?:_|$)/i.test(norm)) return false;
     return true;
   });
 
@@ -202,67 +203,87 @@ export function extractData(rawText: string): { name: string | null; passport: s
 }
 
 /**
+ * Нормализация даты из GTA5RP database.gov (включая обрезанные даты 18.08.20... / 18.08.2... / 18.08)
+ */
+export function normalizeDate(rawDateStr: string): string {
+  if (!rawDateStr) return '';
+  const clean = rawDateStr.replace(/[^\d.]/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$/g, '');
+  const parts = clean.split('.');
+  const currentYear = new Date().getFullYear().toString();
+
+  if (parts.length >= 2) {
+    const day = parts[0].padStart(2, '0');
+    const month = parts[1].padStart(2, '0');
+    let year = parts[2] || currentYear;
+    if (year.length < 4) {
+      if (year.startsWith('20') || year.startsWith('2')) {
+        year = currentYear;
+      } else {
+        year = currentYear;
+      }
+    }
+    return `${day}.${month}.${year}`;
+  }
+  return rawDateStr;
+}
+
+/**
  * Извлечение строк таблицы (Дата, Время, Статья, Офицер, Изолятор)
  */
 export function parseTableRecords(rawText: string): ArrestRecord[] {
   const records: ArrestRecord[] = [];
   if (!rawText) return records;
 
-  const dtRegex = /(\b\d{1,2}[:;]\d{2}\s+\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b|\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\s+\d{1,2}[:;]\d{2}\b)/g;
+  const currentYear = new Date().getFullYear().toString();
+  const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
 
-  let match;
-  let dtMatches = [];
+  let lastTime = '12:00';
+  let lastDate = `01.01.${currentYear}`;
 
-  while ((match = dtRegex.exec(rawText)) !== null) {
-    dtMatches.push({
-      text: match[0],
-      index: match.index
-    });
-  }
+  lines.forEach(line => {
+    // Check if line contains date & time (e.g. 17:21 18.08.20... or 09:22 18.08.2026)
+    const dtMatch = line.match(/(\d{1,2}[:;]\d{2})\s+(\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?)/) ||
+                    line.match(/(\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?)\s+(\d{1,2}[:;]\d{2})/);
 
-  for (let i = 0; i < dtMatches.length; i++) {
-    const current = dtMatches[i];
-    const next = dtMatches[i + 1];
-    const block = rawText.slice(current.index + current.text.length, next ? next.index : rawText.length);
-
-    let time = '';
-    let date = '';
-    const tMatch = current.text.match(/\d{1,2}[:;]\d{2}/);
-    if (tMatch) time = tMatch[0].replace(';', ':');
-
-    const dMatch = current.text.match(/\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/);
-    if (dMatch) date = dMatch[0].replace(/[/,-]/g, '.');
-
-    let remaining = block;
-    let jail = '';
-    const jailMatch = remaining.match(/(?:следственн[а-я]+\s+изолятор|федеральн[а-я]+\s+тюрьма|тюрьма|fbi|lspd|fib|sasp|lscsd)/i);
-    if (jailMatch) {
-      jail = jailMatch[0].trim();
-      remaining = remaining.replace(jailMatch[0], ' ');
-    }
-
-    let officer = '';
-    const officerMatch = remaining.match(/\b([A-ZА-ЯЁ][a-zа-яё0-9]+(?:_[A-ZА-ЯЁ][a-zа-яё0-9]+|\s+[A-ZА-ЯЁ][a-zа-яё0-9]+))\b/);
-    if (officerMatch) {
-      officer = officerMatch[1].replace(/\s+/, '_');
-      remaining = remaining.replace(officerMatch[0], ' ');
-    }
-
-    const articleRegex = /\b\d{1,2}\.\d{1,2}(?:\.\d{1,2})?\b/g;
-    const articles = [];
-    let artMatch;
-    while ((artMatch = articleRegex.exec(remaining)) !== null) {
-      articles.push(artMatch[0]);
-    }
-
-    if (articles.length === 0) {
-      records.push({ time, date, article: '', officer, jail });
-    } else {
-      for (const art of articles) {
-        records.push({ time, date, article: art, officer, jail });
+    if (dtMatch) {
+      let p1 = dtMatch[1], p2 = dtMatch[2];
+      if (p1.includes(':') || p1.includes(';')) {
+        lastTime = p1.replace(';', ':');
+        lastDate = normalizeDate(p2);
+      } else {
+        lastDate = normalizeDate(p1);
+        lastTime = p2.replace(';', ':');
       }
     }
-  }
+
+    // Clean out junk text like "уак-са", "уак", "следственный изолятор"
+    let cleanLine = line
+      .replace(/(?:следственн[а-я]+\s+изолятор|федеральн[а-я]+\s+тюрьма|тюрьма|fbi|lspd|fib|sasp|lscsd)/gi, ' ')
+      .replace(/\b(?:уак[- ]?са|уак|ук[- ]?са|ук|yak[- ]?sa|yak|uk)\b/gi, ' ')
+      .replace(/\b\d{1,2}[:;]\d{2}(?::\d{2})?\b/g, ' ')
+      .replace(/\b\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?\b/g, ' ');
+
+    // Extract all articles from line (e.g. 12.1 12.8, 25.5, 17.1)
+    const articleRegex = /\b\d{1,2}\.\d{1,2}(?:\.\d{1,2})?\b/g;
+    const articles: string[] = [];
+    let artMatch;
+    while ((artMatch = articleRegex.exec(cleanLine)) !== null) {
+      const code = artMatch[0];
+      if (!code.startsWith('0')) {
+        articles.push(code);
+      }
+    }
+
+    articles.forEach(art => {
+      records.push({
+        time: lastTime,
+        date: lastDate,
+        article: art,
+        officer: '',
+        jail: 'Следственный изолятор'
+      });
+    });
+  });
 
   return records;
 }
