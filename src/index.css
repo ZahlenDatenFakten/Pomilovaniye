@@ -1,81 +1,29 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&display=swap");
 
 @theme {
   /* Colors */
-  --color-obsidian: #08080a;
-  --color-onyx: #040406;
-  --color-carbon: #121317;
-  --color-graphite: #1c1d22;
-  --color-slate: #2e3038;
-  --color-smoke: #464853;
-  --color-ash: #5e616e;
-  --color-steel: #777a88;
-  --color-fog: #9194a1;
-  --color-mist: #acafb9;
-  --color-silver: #c7c9d1;
-  --color-bone: #e2e3e9;
+  --color-obsidian: #090a10;
+  --color-onyx: #0e1017;
+  --color-carbon: #141722;
+  --color-graphite: #1f2333;
+  --color-slate: #2c3246;
+  --color-smoke: #424a65;
+  --color-ash: #606b8c;
+  --color-steel: #8a96b8;
+  --color-fog: #abb6d2;
+  --color-mist: #cbd4e6;
+  --color-silver: #e2e7f3;
+  --color-bone: #f1f4fb;
   --color-paper-white: #ffffff;
-  --color-copper: #cc9166;
-  --color-gilded-gradient: #ae9357;
+  --color-copper: #e09f67;
+  --color-gilded-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+  --color-accent-blue: #3b82f6;
+  --color-accent-emerald: #10b981;
 
   /* Typography */
-  --font-ivy-presto: 'Playfair Display', ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-ivy-presto: 'Playfair Display', ui-serif, Georgia, Cambria, "Times New Roman", serif;
   --font-inter: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-
-  /* Typography — Scale */
-  --text-eyebrow: 13px;
-  --leading-eyebrow: 1;
-  --tracking-eyebrow: -0.26px;
-  --text-body-xs: 16px;
-  --leading-body-xs: 1.5;
-  --text-body-sm: 18px;
-  --leading-body-sm: 1.38;
-  --tracking-body-sm: -0.36px;
-  --text-body: 20px;
-  --leading-body: 1.38;
-  --tracking-body: -0.8px;
-  --text-subheading: 24px;
-  --leading-subheading: 1;
-  --tracking-subheading: -0.31px;
-  --text-heading-sm: 44px;
-  --leading-heading-sm: 1.38;
-  --tracking-heading-sm: 0.44px;
-  --text-heading: 52px;
-  --leading-heading: 1.13;
-  --tracking-heading: 0.52px;
-  --text-heading-lg: 64px;
-  --leading-heading-lg: 1.13;
-  --tracking-heading-lg: 0.64px;
-  --text-display: 88px;
-  --leading-display: 1;
-  --tracking-display: 0.88px;
-
-  /* Spacing */
-  --spacing-4: 4px;
-  --spacing-6: 6px;
-  --spacing-8: 8px;
-  --spacing-9: 9px;
-  --spacing-10: 10px;
-  --spacing-12: 12px;
-  --spacing-14: 14px;
-  --spacing-16: 16px;
-  --spacing-20: 20px;
-  --spacing-22: 22px;
-  --spacing-24: 24px;
-  --spacing-32: 32px;
-  --spacing-40: 40px;
-  --spacing-48: 48px;
-  --spacing-105: 105px;
-  --spacing-224: 224px;
-
-  /* Border Radius */
-  --radius-sm: 2px;
-  --radius-lg: 10px;
-  --radius-full: 9999px;
-
-  /* Shadows */
-  --shadow-subtle: rgba(255, 255, 255, 0.2) 0px 0px 0px 1px;
 }
 
 html, body {
@@ -84,4 +32,67 @@ html, body {
   background-color: var(--color-obsidian);
   color: var(--color-bone);
   font-family: var(--font-inter);
+  min-height: 100vh;
+  overflow-x: hidden;
 }
+
+/* Custom Glassmorphism styles */
+.glass-panel {
+  background: rgba(16, 19, 31, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.glass-panel-subtle {
+  background: rgba(22, 26, 42, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-card-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  background: rgba(22, 26, 42, 0.75);
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+.glass-input {
+  background: rgba(10, 12, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  border-color: rgba(224, 159, 103, 0.6);
+  box-shadow: 0 0 0 3px rgba(224, 159, 103, 0.15);
+  background: rgba(12, 15, 26, 0.85);
+  outline: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+

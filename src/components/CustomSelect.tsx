@@ -100,9 +100,9 @@ export function CustomSelect<T extends string | number = string>({
   };
 
   const sizeClasses = {
-    sm: 'px-2.5 py-1.5 text-xs rounded-[9999px]',
-    md: 'px-3.5 py-2 text-xs font-semibold rounded-[9999px]',
-    lg: 'px-4 py-2.5 text-sm font-bold rounded-[9999px]'
+    sm: 'px-3 py-1.5 text-xs rounded-xl',
+    md: 'px-3.5 py-2.5 text-xs font-semibold rounded-xl',
+    lg: 'px-4 py-3 text-sm font-bold rounded-xl'
   };
 
   return (
@@ -119,7 +119,7 @@ export function CustomSelect<T extends string | number = string>({
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-2 bg-[var(--color-onyx)] border border-[var(--color-graphite)] text-white shadow-lg backdrop-blur-xl transition-all duration-200 hover:border-[var(--color-copper)] focus:border-[var(--color-copper)] focus:outline-none cursor-pointer ${
+        className={`w-full flex items-center justify-between gap-2 glass-input text-white shadow-md transition-all duration-200 hover:border-white/20 focus:outline-none cursor-pointer ${
           sizeClasses[size]
         } ${isOpen ? 'border-[var(--color-copper)] ring-2 ring-[var(--color-copper)]/20' : ''} ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
@@ -129,7 +129,7 @@ export function CustomSelect<T extends string | number = string>({
           {selectedOption && 'icon' in selectedOption && selectedOption.icon && (
             <span className="shrink-0 text-[var(--color-copper)]">{selectedOption.icon}</span>
           )}
-          <span className={selectedOption ? 'text-white' : 'text-zinc-500'}>
+          <span className={selectedOption ? 'text-white font-medium' : 'text-zinc-500'}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </span>
@@ -141,14 +141,14 @@ export function CustomSelect<T extends string | number = string>({
         />
       </button>
 
-      {/* PORTAL DROPDOWN MENU (ALWAYS FLOATS TOP OF ALL LAYERS: z-[999999]) */}
+      {/* PORTAL DROPDOWN MENU */}
       {isOpen && coords && createPortal(
         <AnimatePresence>
           <motion.div
             ref={dropdownRef}
-            initial={{ opacity: 0, y: coords.placeAbove ? 8 : -8, scale: 0.98 }}
+            initial={{ opacity: 0, y: coords.placeAbove ? 6 : -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: coords.placeAbove ? 8 : -8, scale: 0.98 }}
+            exit={{ opacity: 0, y: coords.placeAbove ? 6 : -6, scale: 0.98 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
             style={{
               position: 'fixed',
@@ -158,7 +158,7 @@ export function CustomSelect<T extends string | number = string>({
               width: `${coords.width}px`,
               zIndex: 999999,
             }}
-            className={`max-h-60 overflow-y-auto custom-scrollbar bg-[var(--color-carbon)] border border-[var(--color-slate)] rounded-[9999px] shadow-2xl shadow-black/90 backdrop-blur-2xl py-1 space-y-0.5 ${dropdownClassName}`}
+            className={`max-h-64 overflow-y-auto custom-scrollbar bg-[#121522]/95 border border-white/15 rounded-xl shadow-2xl shadow-black/90 backdrop-blur-2xl py-1 space-y-0.5 ${dropdownClassName}`}
           >
             {options.length === 0 ? (
               <div className="px-3 py-2 text-xs text-zinc-500 italic text-center">
@@ -175,10 +175,10 @@ export function CustomSelect<T extends string | number = string>({
                     type="button"
                     disabled={isDisabled}
                     onClick={() => handleSelect(option.value, isDisabled)}
-                    className={`w-full flex items-center justify-between px-3.5 py-2 text-xs text-left transition-colors cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs text-left transition-colors cursor-pointer ${
                       isSelected
-                        ? 'bg-[var(--color-copper)]/10 text-[var(--color-copper)] font-bold border-l-2 border-[var(--color-copper)]'
-                        : 'text-zinc-300 hover:bg-[var(--color-graphite)] hover:text-white'
+                        ? 'bg-[var(--color-copper)]/15 text-[var(--color-copper)] font-bold border-l-2 border-[var(--color-copper)]'
+                        : 'text-zinc-300 hover:bg-white/10 hover:text-white'
                     } ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center gap-2 truncate">
@@ -186,7 +186,7 @@ export function CustomSelect<T extends string | number = string>({
                         <span className="shrink-0 text-zinc-400">{option.icon}</span>
                       )}
                       <div>
-                        <div className="truncate font-semibold">{option.label}</div>
+                        <div className="truncate font-medium">{option.label}</div>
                         {'description' in option && option.description && (
                           <div className="text-[10px] text-zinc-400 truncate mt-0.5">
                             {option.description}
@@ -207,3 +207,4 @@ export function CustomSelect<T extends string | number = string>({
     </div>
   );
 }
+
