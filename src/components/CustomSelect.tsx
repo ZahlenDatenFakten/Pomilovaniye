@@ -158,7 +158,7 @@ export function CustomSelect<T extends string | number = string>({
               width: `${coords.width}px`,
               zIndex: 999999,
             }}
-            className={`max-h-72 overflow-y-auto custom-scrollbar bg-[#0c0c12]/98 border border-white/20 rounded-2xl shadow-2xl shadow-black backdrop-blur-3xl p-1.5 space-y-1 ${dropdownClassName}`}
+            className={`max-h-72 overflow-y-auto bg-[#0a0a10]/98 border border-white/[0.1] rounded-xl shadow-2xl shadow-black/80 backdrop-blur-3xl p-1 space-y-0.5 ${dropdownClassName}`}
           >
             {options.length === 0 ? (
               <div className="px-4 py-3 text-sm text-zinc-500 italic text-center">
@@ -175,10 +175,10 @@ export function CustomSelect<T extends string | number = string>({
                     type="button"
                     disabled={isDisabled}
                     onClick={() => handleSelect(option.value, isDisabled)}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 text-sm text-left transition-all rounded-xl cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left transition-all rounded-lg cursor-pointer ${
                       isSelected
-                        ? 'bg-white/15 text-white font-bold shadow-sm'
-                        : 'text-zinc-300 hover:bg-white/[0.07] hover:text-white'
+                        ? 'bg-white/[0.1] text-white font-bold'
+                        : 'text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-200'
                     } ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center gap-2.5 truncate">
