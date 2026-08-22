@@ -100,15 +100,15 @@ export function CustomSelect<T extends string | number = string>({
   };
 
   const sizeClasses = {
-    sm: 'px-3 py-2 text-xs font-semibold rounded-xl min-h-[38px]',
-    md: 'px-4 py-2.5 sm:py-3 text-sm font-semibold rounded-2xl min-h-[46px]',
-    lg: 'px-5 py-3.5 text-base font-bold rounded-2xl min-h-[54px]'
+    sm: 'px-3 py-1.5 text-xs rounded-md min-h-[32px]',
+    md: 'px-3.5 py-2 text-sm rounded-lg min-h-[38px]',
+    lg: 'px-4 py-3 text-base rounded-lg min-h-[46px]'
   };
 
   return (
     <div className={`relative inline-block w-full ${className}`}>
       {label && (
-        <label className="text-xs font-bold text-zinc-400 block mb-1.5 uppercase tracking-wider">
+        <label className="text-[11px] font-semibold text-zinc-500 block mb-1.5 uppercase tracking-wider">
           {label}
         </label>
       )}
@@ -119,23 +119,23 @@ export function CustomSelect<T extends string | number = string>({
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-2.5 glass-input text-white transition-all duration-150 hover:border-white/30 focus:outline-none cursor-pointer ${
+        className={`w-full flex items-center justify-between gap-2 app-input text-white cursor-pointer ${
           sizeClasses[size]
-        } ${isOpen ? 'border-white/50 ring-2 ring-white/20 bg-white/[0.08]' : ''} ${
-          disabled ? 'opacity-40 cursor-not-allowed' : ''
+        } ${isOpen ? '!border-white/30 !bg-white/10' : ''} ${
+          disabled ? 'opacity-50 cursor-not-allowed' : ''
         } ${buttonClassName}`}
       >
         <span className="truncate flex items-center gap-2">
           {selectedOption && 'icon' in selectedOption && selectedOption.icon && (
-            <span className="shrink-0 text-zinc-300">{selectedOption.icon}</span>
+            <span className="shrink-0 text-zinc-400">{selectedOption.icon}</span>
           )}
-          <span className={selectedOption ? 'text-zinc-100 font-semibold' : 'text-zinc-500'}>
+          <span className={selectedOption ? 'text-zinc-100 font-medium' : 'text-zinc-500'}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </span>
 
         <ChevronDown
-          className={`w-4 h-4 text-zinc-400 shrink-0 transition-transform duration-200 ${
+          className={`w-3.5 h-3.5 text-zinc-500 shrink-0 transition-transform duration-150 ${
             isOpen ? 'rotate-180 text-white' : ''
           }`}
         />
@@ -146,23 +146,23 @@ export function CustomSelect<T extends string | number = string>({
         <AnimatePresence>
           <motion.div
             ref={dropdownRef}
-            initial={{ opacity: 0, y: coords.placeAbove ? 6 : -6, scale: 0.98 }}
+            initial={{ opacity: 0, y: coords.placeAbove ? 4 : -4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: coords.placeAbove ? 6 : -6, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
+            exit={{ opacity: 0, y: coords.placeAbove ? 4 : -4, scale: 0.98 }}
+            transition={{ duration: 0.1, ease: 'easeOut' }}
             style={{
               position: 'fixed',
-              top: coords.placeAbove ? 'auto' : `${coords.top + 6}px`,
-              bottom: coords.placeAbove ? `${window.innerHeight - coords.top + 6}px` : 'auto',
+              top: coords.placeAbove ? 'auto' : `${coords.top + 4}px`,
+              bottom: coords.placeAbove ? `${window.innerHeight - coords.top + 4}px` : 'auto',
               left: `${coords.left}px`,
               width: `${coords.width}px`,
               zIndex: 999999,
             }}
-            className={`max-h-72 overflow-y-auto bg-[#0a0a10]/98 border border-white/[0.1] rounded-xl shadow-2xl shadow-black/80 backdrop-blur-3xl p-1 space-y-0.5 ${dropdownClassName}`}
+            className={`max-h-64 overflow-y-auto bg-[#18181b] border border-white/10 rounded-lg shadow-xl shadow-black/80 p-1 space-y-0.5 ${dropdownClassName}`}
           >
             {options.length === 0 ? (
               <div className="px-4 py-3 text-sm text-zinc-500 italic text-center">
-                Нет вариантов
+                Пусто
               </div>
             ) : (
               options.map(option => {
@@ -175,20 +175,20 @@ export function CustomSelect<T extends string | number = string>({
                     type="button"
                     disabled={isDisabled}
                     onClick={() => handleSelect(option.value, isDisabled)}
-                    className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left transition-all rounded-lg cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs sm:text-sm text-left transition-colors rounded-md cursor-pointer ${
                       isSelected
-                        ? 'bg-white/[0.1] text-white font-bold'
-                        : 'text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-200'
+                        ? 'bg-white/10 text-white font-medium'
+                        : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-200'
                     } ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                   >
-                    <div className="flex items-center gap-2.5 truncate">
+                    <div className="flex items-center gap-2 truncate">
                       {'icon' in option && option.icon && (
-                        <span className="shrink-0 text-zinc-400">{option.icon}</span>
+                        <span className="shrink-0 text-zinc-500">{option.icon}</span>
                       )}
-                      <div className="truncate font-semibold">{option.label}</div>
+                      <div className="truncate">{option.label}</div>
                     </div>
 
-                    {isSelected && <Check className="w-4 h-4 text-white shrink-0 ml-2" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-white shrink-0 ml-2" />}
                   </button>
                 );
               })
@@ -200,5 +200,3 @@ export function CustomSelect<T extends string | number = string>({
     </div>
   );
 }
-
-
