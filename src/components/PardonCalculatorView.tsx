@@ -24,7 +24,8 @@ import {
   ChevronDown,
   Shield,
   Zap,
-  Sliders
+  Sliders,
+  Settings
 } from 'lucide-react';
 
 export interface PardonArticleRow {
@@ -153,37 +154,6 @@ export default function PardonCalculatorView() {
     } catch (e) {}
   }, [previousDebt]);
 
-  const handleCopyUdoReport = () => {
-    navigator.clipboard.writeText(udoReportText);
-    notifyToast('Отчет об УДО скопирован в буфер!', 'success');
-  };
-
-  const handleCopyPardonReport = () => {
-    navigator.clipboard.writeText(pardonReportText);
-    notifyToast('Отчет о помиловании скопирован в буфер!', 'success');
-  };
-
-  const handleAddToTreasury = () => {
-    if (finalPrice <= 0) {
-      notifyToast('Сумма должна быть больше 0', 'error');
-      return;
-    }
-    const now = new Date();
-    const dd = String(now.getDate()).padStart(2, '0');
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const yyyy = now.getFullYear();
-    const dateStr = `${dd}.${mm}.${yyyy}`;
-    
-    const newEntry: TreasuryEntry = {
-      id: Date.now().toString(),
-      citizenName: fio || 'Неизвестный',
-      amount: finalPrice,
-      date: dateStr
-    };
-    
-    setTreasuryEntries([...treasuryEntries, newEntry]);
-    notifyToast(`Добавлено в казну: $${finalPrice.toLocaleString('ru-RU')}`, 'success');
-  };
 
   const getTreasuryDateString = () => {
     const dates = Array.from(new Set(treasuryEntries.map(e => e.date)));
