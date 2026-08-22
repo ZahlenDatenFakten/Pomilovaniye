@@ -24,8 +24,7 @@ import {
   ChevronDown,
   Shield,
   Zap,
-  Sliders,
-  Settings
+  Sliders
 } from 'lucide-react';
 
 export interface PardonArticleRow {
@@ -154,6 +153,37 @@ export default function PardonCalculatorView() {
     } catch (e) {}
   }, [previousDebt]);
 
+  const handleCopyUdoReport = () => {
+    navigator.clipboard.writeText(udoReportText);
+    notifyToast('Отчет об УДО скопирован в буфер!', 'success');
+  };
+
+  const handleCopyPardonReport = () => {
+    navigator.clipboard.writeText(pardonReportText);
+    notifyToast('Отчет о помиловании скопирован в буфер!', 'success');
+  };
+
+  const handleAddToTreasury = () => {
+    if (finalPrice <= 0) {
+      notifyToast('Сумма должна быть больше 0', 'error');
+      return;
+    }
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const dateStr = `${dd}.${mm}.${yyyy}`;
+    
+    const newEntry: TreasuryEntry = {
+      id: Date.now().toString(),
+      citizenName: fio || 'Неизвестный',
+      amount: finalPrice,
+      date: dateStr
+    };
+    
+    setTreasuryEntries([...treasuryEntries, newEntry]);
+    notifyToast(`Добавлено в казну: $${finalPrice.toLocaleString('ru-RU')}`, 'success');
+  };
 
   const getTreasuryDateString = () => {
     const dates = Array.from(new Set(treasuryEntries.map(e => e.date)));
@@ -1008,9 +1038,8 @@ export default function PardonCalculatorView() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-black text-zinc-300 overflow-hidden font-sans selection:bg-white/20">
-      
-      {/* ── TOAST NOTIFICATIONS ── */}
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+      {/* FLOATING GLASS TOAST NOTIFICATION */}
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -1018,329 +1047,538 @@ export default function PardonCalculatorView() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-lg bg-zinc-900 border border-white/10 shadow-2xl text-xs sm:text-sm font-medium text-white"
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3.5 rounded-2xl glass-panel border border-white/15 shadow-2xl text-sm font-semibold tracking-wide text-white"
           >
             {toast.type === 'success' && <Check className="w-4 h-4 text-white shrink-0" />}
-            {toast.type === 'error' && <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />}
-            {toast.type === 'info' && <Award className="w-4 h-4 text-zinc-400 shrink-0" />}
+            {toast.type === 'error' && <AlertTriangle className="w-4 h-4 text-zinc-400 shrink-0" />}
+            {toast.type === 'info' && <Award className="w-4 h-4 text-zinc-300 shrink-0" />}
             <span>{toast.message}</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── LEFT SIDEBAR: TREASURY ── */}
-      <aside className="w-72 xl:w-80 flex-shrink-0 border-r border-white/10 bg-[#09090b] flex flex-col z-20">
-        {/* App Header */}
-        <div className="h-16 px-6 flex items-center gap-3 border-b border-white/10">
-          <div className="w-8 h-8 rounded-md bg-white text-black flex items-center justify-center shrink-0">
-            <Award className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold text-white tracking-tight leading-tight">Помилования</h1>
-            <p className="text-[10px] text-zinc-500 font-mono">SA-GOV TERMINAL</p>
-          </div>
-        </div>
+      {/* ── HEADER ── */}
+      <header className="glass-panel rounded-2xl relative overflow-hidden">
+        {/* Top accent glow line */}
+        <div className="absolute top-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
-        {/* Treasury Section */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="p-6 pb-2 flex items-center justify-between">
-            <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-              <Building className="w-4 h-4" />
-              Казна
-            </h2>
-            <span className="text-[10px] font-mono bg-white/10 text-white px-2 py-0.5 rounded">
-              {treasuryEntries.length}
-            </span>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-6 py-2 space-y-2 scrollbar-hide">
-            {treasuryEntries.length === 0 ? (
-              <div className="text-xs text-zinc-600 italic text-center py-8">История пуста</div>
-            ) : (
-              treasuryEntries.map(entry => (
-                <div key={entry.id} className="flex items-center justify-between p-3 bg-white/[0.02] rounded-md border border-white/[0.04] hover:border-white/10 transition-colors group">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium text-zinc-200">{entry.citizenName}</span>
-                    <span className="text-[10px] text-zinc-600 font-mono">{entry.date}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono text-white tabular-nums">${entry.amount.toLocaleString('ru-RU')}</span>
-                    <button onClick={() => setTreasuryEntries(prev => prev.filter(e => e.id !== entry.id))} className="text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          
-          {/* Treasury Footer Controls */}
-          <div className="p-6 border-t border-white/10 space-y-4">
-            <div className="text-xs text-zinc-500 font-mono whitespace-pre-line leading-relaxed p-3 bg-black rounded-md border border-white/5 select-all">
-              {`Помилований на ${treasuryEntries.reduce((sum, e) => sum + e.amount, 0).toLocaleString('ru-RU').replace(/\s/g, '.')}$ | ${getTreasuryDateString()}\nНа казне ${(treasuryEntries.reduce((sum, e) => sum + e.amount, 0) * 0.85).toLocaleString('ru-RU').replace(/\s/g, '.')}$`}
+        <div className="p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-white/15 to-white/5 border border-white/15 flex items-center justify-center shrink-0">
+              <Award className="w-5.5 h-5.5 text-white" />
             </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={handleCopyTreasuryReport}
-                className="btn-secondary w-full py-2 px-3 rounded-md text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                Скопировать
-              </button>
-              <button
-                type="button"
-                onClick={handleClearTreasury}
-                className="btn-danger w-full py-2 px-3 rounded-md border border-red-500/20 text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Очистить
-              </button>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* ── MAIN WORKSPACE ── */}
-      <main className="flex-1 flex flex-col relative overflow-hidden bg-black">
-        
-        {/* Top Actions Bar */}
-        <div className="h-16 px-8 flex items-center justify-end gap-4 border-b border-white/10 bg-[#09090b]/50">
-           <details className="relative group text-xs">
-              <summary className="text-zinc-400 hover:text-white cursor-pointer flex items-center gap-1.5 font-medium list-none">
-                <Settings className="w-4 h-4" />
-                Настройки
-              </summary>
-              <div className="absolute right-0 top-full mt-2 w-80 bg-zinc-900 border border-white/10 rounded-lg shadow-2xl p-4 z-50">
-                <div className="space-y-3">
-                  <textarea
-                    rows={3}
-                    value={manualText}
-                    onChange={e => setManualText(e.target.value)}
-                    className="w-full app-input rounded-md p-2.5 font-mono text-xs text-zinc-300 resize-none"
-                    placeholder="Вставьте сырой текст для парсинга..."
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => parseTextToRows(manualText)}
-                      className="btn-secondary px-3 py-2 rounded-md font-medium cursor-pointer"
-                    >
-                      Разобрать
-                    </button>
-                    <input
-                      type="text"
-                      placeholder="Groq API (gsk_...)"
-                      value={apiKey}
-                      onChange={e => handleApiKeyChange(e.target.value)}
-                      className="flex-1 app-input rounded-md px-3 py-2 font-mono"
-                    />
-                  </div>
-                </div>
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
+                  Помилования
+                </h1>
+                <span className="text-[11px] font-bold text-zinc-500 font-mono tracking-widest px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07]">SA-GOV</span>
               </div>
-            </details>
+              <p className="text-xs text-zinc-500 mt-0.5 font-medium">Калькулятор пошлины и реестр</p>
+            </div>
+          </div>
 
-            <button
-              onClick={handleResetAll}
-              className="btn-secondary flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer text-zinc-400"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              Очистить всё
-            </button>
+          <button
+            onClick={handleResetAll}
+            className="btn-ghost flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-zinc-400 hover:text-white cursor-pointer active:scale-95"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Очистить</span>
+          </button>
         </div>
+      </header>
 
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 sm:p-10 pb-40 scrollbar-hide space-y-10">
+      {/* ── MAIN TWO-COLUMN WORKSPACE ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        
+        {/* ── LEFT COLUMN ── */}
+        <div className="xl:col-span-7 space-y-6">
           
-          {/* SECTION 1: CITIZEN INPUTS */}
-          <section className="max-w-4xl mx-auto space-y-4">
-            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Данные гражданина</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-zinc-400 uppercase flex items-center gap-1.5">
-                  <UserCheck className="w-3.5 h-3.5" /> Имя Фамилия
+          {/* CARD 1: CITIZEN & OCR */}
+          <section className="glass-panel rounded-2xl p-5 sm:p-6 space-y-5 relative overflow-hidden">
+            <div className="absolute top-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+            {/* ROW 1: NAME & PASSPORT */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-500 mb-2 uppercase tracking-wider">
+                  <UserCheck className="w-3.5 h-3.5" />
+                  Имя Фамилия
                 </label>
                 <input
                   type="text"
                   placeholder="Name_Surname"
                   value={fio}
-                  onChange={e => { setFio(e.target.value); setFioWarning(false); }}
-                  className={`w-full app-input rounded-md px-4 py-3 text-sm font-medium ${fioWarning ? 'border-red-500/50' : ''}`}
+                  onChange={e => {
+                    setFio(e.target.value);
+                    setFioWarning(false);
+                  }}
+                  className={`w-full glass-input rounded-xl px-4 py-3 text-sm text-white font-medium placeholder:text-zinc-600 ${
+                    fioWarning ? 'border-zinc-400/50 ring-1 ring-zinc-400/20' : ''
+                  }`}
                 />
+                {fioWarning && (
+                  <p className="text-[11px] text-zinc-400 mt-1.5 flex items-center gap-1.5 font-medium">
+                    <AlertTriangle className="w-3.5 h-3.5 text-zinc-500 shrink-0" /> Проверьте формат: Имя_Фамилия
+                  </p>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-zinc-400 uppercase flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5" /> Паспорт
+              <div>
+                <label className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-500 mb-2 uppercase tracking-wider">
+                  <Shield className="w-3.5 h-3.5" />
+                  Паспорт
                 </label>
                 <input
                   type="text"
                   placeholder="601226"
                   value={passport}
                   onChange={e => setPassport(e.target.value)}
-                  className="w-full app-input rounded-md px-4 py-3 text-sm font-mono font-medium"
+                  className="w-full glass-input rounded-xl px-4 py-3 text-sm font-mono text-white font-bold placeholder:text-zinc-600"
                 />
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-zinc-400 uppercase flex items-center gap-1.5">
-                  <DollarSign className="w-3.5 h-3.5" /> Долг за сутки
-                </label>
+            {/* DIVIDER */}
+            <div className="glass-divider" />
+
+            {/* ROW 2: DAILY DEBT & OCR */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Daily debt */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+                    <DollarSign className="w-3.5 h-3.5" />
+                    Суточный долг
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleResetDailyDebt}
+                    className="text-[11px] text-zinc-600 hover:text-white font-mono flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>$0</span>
+                  </button>
+                </div>
                 <input
                   type="number"
                   min="0"
                   placeholder="0"
                   value={previousDebt}
                   onChange={e => setPreviousDebt(e.target.value)}
-                  className="w-full app-input rounded-md px-4 py-3 text-sm font-mono font-medium text-white"
+                  className="w-full glass-input rounded-xl px-4 py-3 text-sm font-mono text-zinc-100 font-extrabold placeholder:text-zinc-600"
                 />
               </div>
-            </div>
-          </section>
 
-          {/* SECTION 2: OCR SCANNER */}
-          <section className="max-w-4xl mx-auto space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Скриншот базы</h3>
-              <div className="flex bg-zinc-900 rounded-md p-0.5 border border-white/5">
-                <button
-                  type="button"
-                  onClick={() => setCurrentMethod('tesseract')}
-                  className={`px-3 py-1 text-[11px] font-medium rounded cursor-pointer ${currentMethod === 'tesseract' ? 'bg-zinc-700 text-white' : 'text-zinc-500'}`}
-                >
-                  OCR
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentMethod('groq')}
-                  className={`px-3 py-1 text-[11px] font-medium rounded cursor-pointer ${currentMethod === 'groq' ? 'bg-zinc-700 text-white' : 'text-zinc-500'}`}
-                >
-                  AI
-                </button>
+              {/* OCR Trigger */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+                    <FileSearch className="w-3.5 h-3.5" />
+                    Скриншот
+                  </label>
+                  <div className="flex items-center bg-black/40 p-0.5 rounded-lg border border-white/[0.07] text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentMethod('tesseract')}
+                      className={`px-2.5 py-1 rounded-md cursor-pointer transition-all font-semibold ${currentMethod === 'tesseract' ? 'bg-white/15 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+                    >
+                      OCR
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentMethod('groq')}
+                      className={`px-2.5 py-1 rounded-md cursor-pointer transition-all font-semibold ${currentMethod === 'groq' ? 'bg-white/15 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+                    >
+                      AI
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2.5">
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                      e.preventDefault();
+                      if (e.dataTransfer.files?.[0]) handleImageFile(e.dataTransfer.files[0]);
+                    }}
+                    className={`flex-1 glass-input rounded-xl px-4 py-3 cursor-pointer transition-all flex items-center justify-center gap-2 ${
+                      imagePreview ? 'border-white/25 bg-white/[0.06]' : 'hover:border-white/20'
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => e.target.files?.[0] && handleImageFile(e.target.files[0])}
+                    />
+                    <Upload className="w-4 h-4 text-zinc-500 shrink-0" />
+                    <span className="text-xs text-zinc-400 truncate font-medium">
+                      {imagePreview ? 'Готов' : 'Ctrl+V'}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAnalyzeImage}
+                    disabled={isAnalyzing || !uploadedBase64}
+                    className="px-5 py-3 rounded-xl btn-metallic text-black font-bold text-xs disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                  >
+                    {isAnalyzing ? '...' : 'Распознать'}
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={e => e.preventDefault()}
-                onDrop={e => {
-                  e.preventDefault();
-                  if (e.dataTransfer.files?.[0]) handleImageFile(e.dataTransfer.files[0]);
-                }}
-                className={`flex-1 border border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors ${
-                  imagePreview ? 'border-zinc-500 bg-zinc-900' : 'border-zinc-700 bg-black hover:border-zinc-500 hover:bg-zinc-900/50'
-                }`}
-              >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/*"
-                  className="hidden"
-                  onChange={e => e.target.files?.[0] && handleImageFile(e.target.files[0])}
-                />
-                <Upload className="w-6 h-6 text-zinc-500" />
-                <span className="text-sm font-medium text-zinc-400">
-                  {imagePreview ? 'Изображение загружено. Нажмите для замены.' : 'Вставьте изображение (Ctrl+V) или перетащите'}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleAnalyzeImage}
-                disabled={isAnalyzing || !uploadedBase64}
-                className="sm:w-32 py-4 rounded-lg btn-primary flex flex-col items-center justify-center gap-2 cursor-pointer"
-              >
-                <FileSearch className="w-5 h-5" />
-                <span className="text-xs">{isAnalyzing ? 'Анализ...' : 'Распознать'}</span>
-              </button>
             </div>
 
             {/* OCR PROGRESS */}
             {isAnalyzing && (
-              <div className="space-y-1.5 max-w-md mx-auto pt-2">
-                <div className="flex justify-between text-[10px] text-zinc-500 font-medium">
-                  <span>Обработка</span>
-                  <span className="font-mono">{Math.round(ocrProgress)}%</span>
+              <div className="space-y-2">
+                <div className="flex justify-between text-[11px] text-zinc-400 font-medium">
+                  <span>Сканирование...</span>
+                  <span className="font-mono font-bold text-zinc-300">{Math.round(ocrProgress)}%</span>
                 </div>
-                <div className="w-full bg-zinc-900 rounded-full h-1 overflow-hidden">
-                  <div className="bg-white h-full transition-all duration-200" style={{ width: `${ocrProgress}%` }} />
+                <div className="w-full bg-black/50 rounded-full h-1.5 overflow-hidden border border-white/[0.06]">
+                  <div 
+                    className="bg-gradient-to-r from-zinc-400 to-white h-full transition-all duration-200" 
+                    style={{ width: `${ocrProgress}%` }} 
+                  />
                 </div>
               </div>
             )}
 
             {statusMessage && (
-              <p className={`text-xs text-center font-medium pt-2 ${statusColor === 'red' ? 'text-red-400' : 'text-zinc-500'}`}>
+              <p className={`text-xs text-center font-medium ${statusColor === 'red' ? 'text-rose-400/80' : 'text-zinc-400'}`}>
                 {statusMessage}
               </p>
             )}
+
+            {/* COLLAPSIBLE SETTINGS */}
+            <details className="group">
+              <summary className="glass-divider relative flex items-center justify-center cursor-pointer py-2">
+                <span className="absolute bg-[#0c0c14] px-3 text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors font-semibold flex items-center gap-1.5 uppercase tracking-wider">
+                  Настройки
+                  <ChevronDown className="w-3.5 h-3.5 group-open:rotate-180 transition-transform" />
+                </span>
+              </summary>
+              <div className="pt-4 space-y-3">
+                <textarea
+                  rows={3}
+                  value={manualText}
+                  onChange={e => setManualText(e.target.value)}
+                  className="w-full glass-input rounded-xl p-3.5 text-xs font-mono text-zinc-300 leading-relaxed placeholder:text-zinc-600"
+                  placeholder="Вставьте сырой текст..."
+                />
+                <div className="flex gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => parseTextToRows(manualText)}
+                    className="btn-ghost px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-300 cursor-pointer"
+                  >
+                    Разобрать
+                  </button>
+                  <input
+                    type="text"
+                    placeholder="Groq API Key (gsk_...)"
+                    value={apiKey}
+                    onChange={e => handleApiKeyChange(e.target.value)}
+                    className="flex-1 glass-input rounded-xl px-3.5 py-2.5 text-xs font-mono text-zinc-400 placeholder:text-zinc-600"
+                  />
+                </div>
+              </div>
+            </details>
           </section>
 
-          {/* SECTION 3: ARTICLES TABLE */}
-          <section className="max-w-5xl mx-auto space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                Статьи в судимости
-                <span className="bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded font-mono text-[10px]">{rowCalculations.length}</span>
-              </h3>
+
+        {/* ── RIGHT COLUMN ── */}
+        <div className="xl:col-span-5 xl:sticky xl:top-8 space-y-6">
+
+          {/* FINANCIAL SUMMARY */}
+          <section className="glass-panel rounded-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
+            <div className="p-5 sm:p-6 space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-zinc-400" />
+                  </div>
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                    Итог
+                  </h2>
+                </div>
+              </div>
+
+              {/* 4 STAT TILES (2x2 GRID) */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* CURRENT PARDON */}
+                <div className="glass-panel-subtle rounded-xl p-4 space-y-1.5 glass-card-hover">
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                    Помилование
+                  </span>
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white font-mono tracking-tight tabular-nums">
+                    ${finalSum.toLocaleString('ru-RU')}
+                  </div>
+                  {rawSum > TOTAL_CAP && (
+                    <p className="text-[10px] text-zinc-400 font-semibold mt-1 bg-white/[0.04] inline-block px-1.5 py-0.5 rounded">
+                      Лимит $170k
+                    </p>
+                  )}
+                </div>
+
+                {/* TOTAL DAILY DEBT */}
+                <div className="glass-panel-subtle rounded-xl p-4 space-y-1.5 glass-card-hover">
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                    Итого долг
+                  </span>
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white font-mono tracking-tight tabular-nums">
+                    ${totalDailyDebt.toLocaleString('ru-RU')}
+                  </div>
+                  <p className="text-[10px] text-zinc-600 font-mono">
+                    {prevDebtNum > 0 ? `+${prevDebtNum.toLocaleString('ru-RU')}$` : 'С нуля'}
+                  </p>
+                </div>
+
+                {/* TREASURY */}
+                <div className="glass-panel-subtle rounded-xl p-4 space-y-1.5 glass-card-hover">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                      Казна 85%
+                    </span>
+                    <Building className="w-3.5 h-3.5 text-zinc-600" />
+                  </div>
+                  <div className="text-lg sm:text-xl lg:text-2xl font-extrabold text-white font-mono tabular-nums">
+                    ${treasurySum.toLocaleString('ru-RU')}
+                  </div>
+                </div>
+
+                {/* OFFICER FEE */}
+                <div className="glass-panel-subtle rounded-xl p-4 space-y-1.5 glass-card-hover">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                      Себе 15%
+                    </span>
+                    <Award className="w-3.5 h-3.5 text-zinc-600" />
+                  </div>
+                  <div className="text-lg sm:text-xl lg:text-2xl font-extrabold text-white font-mono tabular-nums">
+                    ${selfSum.toLocaleString('ru-RU')}
+                  </div>
+                </div>
+              </div>
+
+              {/* REPORT PREVIEW */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                    Отчёт
+                  </span>
+                  <span className="text-[10px] text-zinc-600 font-mono">готов</span>
+                </div>
+
+                <div className="glass-input rounded-xl p-3.5 text-xs font-mono text-zinc-300 whitespace-pre-line leading-relaxed select-all">
+                  {reportText}
+                </div>
+              </div>
+
+              {/* CTA BUTTON */}
+              <button
+                type="button"
+                onClick={handleCopyReport}
+                className="w-full py-4 px-6 rounded-xl btn-metallic text-black font-extrabold text-sm flex items-center justify-center gap-2.5 cursor-pointer"
+              >
+                {copiedReport ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                <span>{copiedReport ? 'Скопировано!' : 'Скопировать и применить'}</span>
+              </button>
+            </div>
+          </section>
+
+          {/* TREASURY REPORT */}
+          <section className="glass-panel rounded-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+            <div className="p-5 sm:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center">
+                    <Building className="w-4 h-4 text-zinc-400" />
+                  </div>
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                    Казна
+                  </h2>
+                </div>
+                <span className="w-6 h-6 rounded-md bg-white/[0.06] border border-white/[0.08] text-[11px] font-mono text-zinc-400 font-bold flex items-center justify-center">
+                  {treasuryEntries.length}
+                </span>
+              </div>
+
+              {/* List */}
+              <div className="space-y-1.5 max-h-40 overflow-y-auto scrollbar-hide">
+                {treasuryEntries.length === 0 ? (
+                  <div className="text-xs text-zinc-600 italic text-center py-3">Пока пусто</div>
+                ) : (
+                  treasuryEntries.map(entry => (
+                    <div key={entry.id} className="flex items-center justify-between px-3 py-2.5 bg-white/[0.03] rounded-lg border border-white/[0.04] hover:bg-white/[0.05] transition-colors">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-zinc-300">{entry.citizenName}</span>
+                        <span className="text-[10px] text-zinc-600 font-mono">{entry.date}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-mono font-bold text-white tabular-nums">${entry.amount.toLocaleString('ru-RU')}</span>
+                        <button onClick={() => setTreasuryEntries(prev => prev.filter(e => e.id !== entry.id))} className="text-zinc-600 hover:text-red-400/70 cursor-pointer transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="glass-input rounded-xl p-3.5 text-xs font-mono text-zinc-300 whitespace-pre-line leading-relaxed select-all">
+                {`Помилований на ${treasuryEntries.reduce((sum, e) => sum + e.amount, 0).toLocaleString('ru-RU').replace(/\s/g, '.')}$ | ${getTreasuryDateString()}\nНа казне ${(treasuryEntries.reduce((sum, e) => sum + e.amount, 0) * 0.85).toLocaleString('ru-RU').replace(/\s/g, '.')}$`}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleCopyTreasuryReport}
+                  className="btn-ghost w-full py-2.5 px-3 rounded-lg text-xs font-semibold text-zinc-300 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Скопировать</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearTreasury}
+                  className="w-full py-2.5 px-3 rounded-lg bg-red-500/[0.06] hover:bg-red-500/[0.12] text-red-400/70 hover:text-red-400 border border-red-500/[0.08] hover:border-red-500/[0.15] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Очистить</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {/* ── FULL WIDTH TABLE ── */}
+      <div className="w-full mt-6">
+          {/* CARD 2: CONVICTIONS TABLE */}
+          <section className="glass-panel rounded-2xl p-5 sm:p-6 space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                  Статьи
+                </h2>
+                <span className="w-6 h-6 rounded-md bg-white/[0.06] border border-white/[0.08] text-[11px] font-mono text-zinc-400 font-bold flex items-center justify-center">
+                  {rowCalculations.length}
+                </span>
+              </div>
+
               <button
                 type="button"
                 onClick={handleAddManualRow}
-                className="btn-secondary px-3 py-1.5 rounded-md text-xs flex items-center gap-1.5 cursor-pointer"
+                className="btn-ghost flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white cursor-pointer active:scale-95"
               >
-                <Plus className="w-3 h-3" /> Добавить
+                <Plus className="w-3.5 h-3.5" />
+                <span>Добавить</span>
               </button>
             </div>
 
-            <div className="w-full overflow-x-auto border border-white/10 rounded-lg bg-[#09090b]">
-              <table className="w-full text-left text-sm border-collapse whitespace-nowrap">
+            {/* TABLE */}
+            <div className="w-full overflow-x-auto scrollbar-hide">
+              <table className="w-full text-left text-sm border-collapse">
                 <thead>
-                  <tr className="border-b border-white/10 bg-black/50 text-zinc-500 text-[11px] uppercase tracking-wider font-semibold">
-                    <th className="py-3 px-4 w-10"></th>
-                    <th className="py-3 px-4">Ст.</th>
-                    <th className="py-3 px-4">Дата</th>
-                    <th className="py-3 px-4">Время</th>
-                    <th className="py-3 px-4 w-48">Тяжесть</th>
-                    <th className="py-3 px-4 text-right">Сумма</th>
-                    <th className="py-3 px-4 text-right">Статус</th>
+                  <tr className="border-b border-white/[0.06] text-zinc-600 uppercase tracking-wider text-[10px] font-bold">
+                    <th className="pb-3 px-2 w-10"></th>
+                    <th className="pb-3 px-2">Ст.</th>
+                    <th className="pb-3 px-2">Дата</th>
+                    <th className="pb-3 px-2">Время</th>
+                    <th className="pb-3 px-2">Тяжесть</th>
+                    <th className="pb-3 px-2 text-right">Сумма</th>
+                    <th className="pb-3 px-2 text-right">Статус</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-white/[0.04]">
                   {rowCalculations.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-zinc-600 text-sm">Нет данных</td>
+                      <td colSpan={7} className="py-10 text-center text-zinc-600 text-xs italic">
+                        Загрузите скриншот или добавьте статью вручную
+                      </td>
                     </tr>
                   ) : (
                     rowCalculations.map(row => (
-                      <tr key={row.id} className={`${row.isBlocked ? 'opacity-40' : 'hover:bg-white/[0.02]'} transition-colors`}>
-                        <td className="py-2 px-4 text-center">
-                          <button onClick={() => handleRemoveRow(row.id)} className="text-zinc-600 hover:text-white cursor-pointer p-1">
-                            <Trash2 className="w-4 h-4" />
+                      <tr 
+                        key={row.id} 
+                        className={`transition-colors duration-150 ${row.isBlocked ? 'opacity-50' : 'hover:bg-white/[0.02]'}`}
+                      >
+                        <td className="py-3 px-2 text-center w-10">
+                          <button
+                            onClick={() => handleRemoveRow(row.id)}
+                            className="p-1.5 rounded-lg text-zinc-600 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                            title="Удалить"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </td>
-                        <td className="py-2 px-4">
-                          <input type="text" value={row.code} onChange={e => handleUpdateRow(row.id, 'code', e.target.value)} className="app-input rounded px-2 py-1.5 w-16 text-xs font-mono" placeholder="1.1" />
+
+                        <td className="py-3 px-2">
+                          <input
+                            type="text"
+                            value={row.code}
+                            onChange={e => handleUpdateRow(row.id, 'code', e.target.value)}
+                            placeholder="12.8"
+                            className="glass-input rounded-lg px-2.5 py-1.5 text-sm text-white font-mono font-bold w-full max-w-[90px] placeholder:text-zinc-700"
+                          />
                         </td>
-                        <td className="py-2 px-4">
-                          <input type="text" value={row.date} onChange={e => handleUpdateRow(row.id, 'date', e.target.value)} className="app-input rounded px-2 py-1.5 w-24 text-xs font-mono" placeholder="ДД.ММ.ГГГГ" />
+
+                        <td className="py-3 px-2">
+                          <input
+                            type="text"
+                            value={row.date}
+                            onChange={e => handleUpdateRow(row.id, 'date', e.target.value)}
+                            placeholder="ДД.ММ.ГГГГ"
+                            className="glass-input rounded-lg px-2.5 py-1.5 text-sm text-zinc-300 font-mono w-full max-w-[100px] placeholder:text-zinc-700"
+                          />
                         </td>
-                        <td className="py-2 px-4">
-                          <input type="text" value={row.time} onChange={e => handleUpdateRow(row.id, 'time', e.target.value)} className="app-input rounded px-2 py-1.5 w-16 text-xs font-mono" placeholder="ЧЧ:ММ" />
+
+                        <td className="py-3 px-2">
+                          <input
+                            type="text"
+                            value={row.time}
+                            onChange={e => handleUpdateRow(row.id, 'time', e.target.value)}
+                            placeholder="ЧЧ:ММ"
+                            className="glass-input rounded-lg px-2.5 py-1.5 text-sm text-zinc-300 font-mono w-full max-w-[72px] placeholder:text-zinc-700"
+                          />
                         </td>
-                        <td className="py-2 px-4">
+
+                        <td className="py-3 px-2 min-w-[140px]">
                           <CustomSelect
                             value={row.tyazhest}
                             onChange={val => handleUpdateRow(row.id, 'tyazhest', val)}
-                            options={[{ value: '', label: 'Выбрать' }, ...Object.entries(LABELS).map(([k, v]) => ({ value: k, label: v }))]}
+                            options={[
+                              { value: '', label: '— выбрать —' },
+                              ...Object.entries(LABELS).map(([k, v]) => ({ value: k, label: v }))
+                            ]}
                             size="sm"
                           />
                         </td>
-                        <td className="py-2 px-4 text-right font-mono font-medium text-white tabular-nums">
+
+                        <td className="py-3 px-2 text-right font-mono font-bold text-sm text-white tabular-nums">
                           {row.price ? `$${row.price.toLocaleString('ru-RU')}` : '—'}
                         </td>
-                        <td className="py-2 px-4 text-right">
-                          <span className="text-[11px] font-medium text-zinc-500 uppercase">{row.statusText}</span>
+
+                        <td className="py-3 px-2 text-right whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border ${
+                            row.isBlocked 
+                              ? 'bg-white/[0.02] border-white/[0.06] text-zinc-500' 
+                              : 'bg-white/[0.05] border-white/[0.1] text-zinc-200'
+                          }`}>
+                            {row.isBlocked ? <Clock className="w-3 h-3" /> : <Check className="w-3 h-3" />}
+                            <span>{row.statusText}</span>
+                          </span>
                         </td>
                       </tr>
                     ))
@@ -1350,61 +1588,7 @@ export default function PardonCalculatorView() {
             </div>
           </section>
         </div>
-
-        {/* ── FLOATING BOTTOM ACTION BAR ── */}
-        <div className="absolute bottom-0 left-0 right-0 bg-[#09090b]/90 backdrop-blur-md border-t border-white/10 z-30">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-6">
-            
-            {/* Financial Breakdown */}
-            <div className="flex items-center gap-8 text-sm">
-              <div className="space-y-0.5">
-                <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">Помилование</span>
-                <span className="font-mono text-xl text-white font-semibold tabular-nums">${finalSum.toLocaleString('ru-RU')}</span>
-                {rawSum > TOTAL_CAP && <span className="ml-2 text-[10px] text-black bg-white px-1 py-0.5 rounded uppercase font-bold">Лимит</span>}
-              </div>
-              <div className="w-px h-8 bg-white/10 hidden sm:block"></div>
-              <div className="space-y-0.5 hidden sm:block">
-                <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">Итог долг</span>
-                <span className="font-mono text-base text-zinc-300 tabular-nums">${totalDailyDebt.toLocaleString('ru-RU')}</span>
-              </div>
-              <div className="w-px h-8 bg-white/10 hidden md:block"></div>
-              <div className="space-y-0.5 hidden md:block">
-                <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">В казну (85%)</span>
-                <span className="font-mono text-base text-zinc-400 tabular-nums">${treasurySum.toLocaleString('ru-RU')}</span>
-              </div>
-              <div className="w-px h-8 bg-white/10 hidden md:block"></div>
-              <div className="space-y-0.5 hidden md:block">
-                <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">Себе (15%)</span>
-                <span className="font-mono text-base text-zinc-400 tabular-nums">${selfSum.toLocaleString('ru-RU')}</span>
-              </div>
-            </div>
-
-            {/* Main Action */}
-            <div className="flex items-center gap-4 w-full md:w-auto">
-              {/* Report Preview Tooltip Trigger */}
-              <div className="hidden lg:block relative group">
-                <button className="text-zinc-500 hover:text-white transition-colors cursor-help">
-                  <FileText className="w-5 h-5" />
-                </button>
-                <div className="absolute bottom-full right-0 mb-4 w-80 bg-zinc-900 border border-white/10 p-4 rounded-lg shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-                  <span className="text-[10px] uppercase text-zinc-500 mb-2 block font-bold">Предпросмотр отчета</span>
-                  <div className="text-xs font-mono text-zinc-300 whitespace-pre-line">{reportText}</div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleCopyReport}
-                className="btn-primary w-full md:w-auto py-3 px-8 rounded-lg text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg"
-              >
-                {copiedReport ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copiedReport ? 'Скопировано!' : 'Скопировать и применить'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </main>
+      </div>
     </div>
   );
 }
