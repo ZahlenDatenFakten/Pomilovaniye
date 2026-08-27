@@ -3,14 +3,13 @@ import PardonCalculatorView from './components/PardonCalculatorView';
 
 export default function App() {
   return (
-    <div className="relative min-h-screen bg-[#050507] text-[#f4f4f5] overflow-x-hidden selection:bg-white/20 selection:text-white">
-      {/* BACKGROUND HANDLED BY CSS */}
-
+    <div className="relative min-h-screen bg-[#0B0E14] text-[#F1F5F9] overflow-x-hidden selection:bg-emerald-500/20 selection:text-emerald-300">
       {/* MAIN CONTAINER */}
-      <main className="relative z-10 py-6 sm:py-10 px-4 sm:px-8 max-w-[1600px] mx-auto">
+      <main className="relative z-10 py-5 sm:py-8 px-3 sm:px-6 lg:px-8 max-w-[1640px] mx-auto">
         <PardonCalculatorView />
       </main>
     </div>
   );
 }
+
 

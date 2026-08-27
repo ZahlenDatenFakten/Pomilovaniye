@@ -111,9 +111,9 @@ export function CustomSelect<T extends string | number = string>({
   };
 
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-xs font-semibold rounded-xl min-h-[34px]',
-    md: 'px-3.5 py-2 text-sm font-semibold rounded-xl min-h-[42px]',
-    lg: 'px-4 py-2.5 text-sm font-bold rounded-xl min-h-[48px]'
+    sm: 'px-2.5 py-1.5 text-xs font-semibold rounded-lg min-h-[32px]',
+    md: 'px-3.5 py-2 text-sm font-semibold rounded-xl min-h-[40px]',
+    lg: 'px-4 py-2.5 text-sm font-bold rounded-xl min-h-[46px]'
   };
 
   return (
@@ -132,11 +132,11 @@ export function CustomSelect<T extends string | number = string>({
         disabled={disabled}
         className={`w-full flex items-center justify-between gap-2 luxury-input text-slate-100 transition-all duration-150 cursor-pointer ${
           sizeClasses[size]
-        } ${isOpen ? 'border-indigo-500/50 ring-2 ring-indigo-500/20 bg-slate-900/90' : ''} ${
+        } ${isOpen ? 'border-emerald-500/60 ring-2 ring-emerald-500/20 bg-slate-900/90' : ''} ${
           disabled ? 'opacity-40 cursor-not-allowed' : ''
         } ${buttonClassName}`}
       >
-        <span className="truncate flex items-center gap-2">
+        <span className="truncate flex items-center gap-1.5">
           {colorStyle && (
             <span className={`w-2 h-2 rounded-full shrink-0 ${colorStyle.dot} shadow-[0_0_8px_currentColor]`} />
           )}
@@ -169,7 +169,7 @@ export function CustomSelect<T extends string | number = string>({
               width: `${coords.width}px`,
               zIndex: 999999,
             }}
-            className={`max-h-72 overflow-y-auto bg-[#0b0e17]/98 border border-white/10 rounded-xl shadow-2xl shadow-black/90 backdrop-blur-3xl p-1.5 space-y-1 ${dropdownClassName}`}
+            className={`max-h-72 overflow-y-auto bg-[#0E1422]/98 border border-white/10 rounded-xl shadow-2xl shadow-black/90 backdrop-blur-2xl p-1.5 space-y-0.5 ${dropdownClassName}`}
           >
             {options.length === 0 ? (
               <div className="px-3 py-2 text-xs text-slate-500 italic text-center">
@@ -187,9 +187,9 @@ export function CustomSelect<T extends string | number = string>({
                     type="button"
                     disabled={isDisabled}
                     onClick={() => handleSelect(option.value, isDisabled)}
-                    className={`w-full flex items-center justify-between px-2.5 py-2 text-xs text-left transition-all rounded-lg cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-left transition-all rounded-lg cursor-pointer ${
                       isSelected
-                        ? 'bg-white/10 text-white font-bold'
+                        ? 'bg-emerald-500/15 border border-emerald-500/30 text-white font-bold'
                         : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'
                     } ${isDisabled ? 'opacity-30 cursor-not-allowed' : ''}`}
                   >
@@ -204,7 +204,7 @@ export function CustomSelect<T extends string | number = string>({
                       </span>
                     </div>
 
-                    {isSelected && <Check className="w-3.5 h-3.5 text-indigo-400 shrink-0 ml-2" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 ml-2" />}
                   </button>
                 );
               })
@@ -216,5 +216,6 @@ export function CustomSelect<T extends string | number = string>({
     </div>
   );
 }
+
 
 
