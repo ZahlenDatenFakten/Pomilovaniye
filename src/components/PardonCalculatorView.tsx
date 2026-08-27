@@ -478,24 +478,69 @@ export default function PardonCalculatorView() {
     }));
   };
 
-  const setRowTimeToNow = (id: string) => {
-    const now = new Date();
-    setRows(prev => prev.map(r => r.id !== id ? r : { ...r, date: `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`, time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}` }));
+  const handleResetDailyDebt = () => {
+    setPreviousDebt('0');
+    try {
+      localStorage.setItem('pardon_daily_accumulated_debt', '0');
+    } catch (e) {}
+    notifyToast('Суточный долг сброшен в $0', 'info');
+  };
+
+  const handleResetAll = () => {
+    setFio('');
+    setPassport('');
+    setPreviousDebt('0');
+    setRows([]);
+    setImagePreview(null);
+    setUploadedBase64(null);
+    setManualText('');
+    notifyToast('Все поля очищены', 'info');
   };
 
   let rawSum = 0;
   const rowCalculations = rows.map(row => {
-    let price = PRICES[row.tyazhest] || 0;
-    let isBlocked = WAIT_REQUIRED[row.tyazhest] && (hoursSince(row.date, row.time) || 0) < 24;
-    if (!isBlocked) rawSum += price;
-    return { ...row, price, isBlocked, statusText: isBlocked ? 'ждать 24ч' : 'учтено' };
+    let price = 0;
+    let statusText = 'учтено';
+    let isBlocked = false;
+
+    if (row.tyazhest && PRICES[row.tyazhest]) {
+      price = PRICES[row.tyazhest];
+      if (WAIT_REQUIRED[row.tyazhest]) {
+        const hrs = hoursSince(row.date, row.time);
+        if (hrs === null) {
+          statusText = 'нет даты';
+          isBlocked = true;
+          price = 0;
+        } else if (hrs < 24) {
+          const waitHrs = Math.ceil(24 - hrs);
+          statusText = `ждать ${waitHrs}ч`;
+          isBlocked = true;
+          price = 0;
+        }
+      }
+    } else {
+      statusText = 'тяжесть?';
+      isBlocked = true;
+      price = 0;
+    }
+
+    if (!isBlocked) {
+      rawSum += price;
+    }
+
+    return { ...row, price, statusText, isBlocked };
   });
 
+  const prevDebtNum = Math.max(0, Number(previousDebt) || 0);
   const finalSum = Math.min(rawSum, TOTAL_CAP);
-  const totalDailyDebt = Math.max(0, Number(previousDebt) || 0) + finalSum;
+  const totalDailyDebt = prevDebtNum + finalSum;
   const treasurySum = Math.round(totalDailyDebt * 0.80);
   const selfSum = totalDailyDebt - treasurySum;
-  const reportText = `Имя Фамилия | Номер паспорта: ${fio.trim() || '—'} | ${passport.trim() || '—'}\nСумма помилования: ${finalSum.toLocaleString('ru-RU')}$\nОбщая сумма за сутки долга: ${totalDailyDebt.toLocaleString('ru-RU')}$\nВид снятия судимости: Помилование`;
+
+  const reportText = `Имя Фамилия | Номер паспорта: ${fio.trim() || '—'} | ${passport.trim() || '—'}
+Сумма помилования: ${finalSum.toLocaleString('ru-RU')}$
+Общая сумма за сутки долга: ${totalDailyDebt.toLocaleString('ru-RU')}$
+Вид снятия судимости: Помилование`;
 
   const handleCopyReport = () => {
     navigator.clipboard.writeText(reportText).then(() => {
@@ -503,7 +548,12 @@ export default function PardonCalculatorView() {
       setTimeout(() => setCopiedReport(false), 2500);
       if (finalSum > 0) {
         const now = new Date();
-        setTreasuryEntries(prev => [...prev, { id: Date.now().toString(), citizenName: fio.trim() || 'Неизвестный', amount: finalSum, date: `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}` }]);
+        setTreasuryEntries(prev => [...prev, { 
+          id: Date.now().toString(), 
+          citizenName: fio.trim() || 'Неизвестный', 
+          amount: finalSum, 
+          date: `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}` 
+        }]);
       }
       setPreviousDebt(totalDailyDebt.toString());
       notifyToast('Отчёт скопирован, данные занесены в казну!', 'success');
@@ -515,7 +565,7 @@ export default function PardonCalculatorView() {
     return dates.length > 0 ? `${dates[0]} - ${dates[dates.length - 1]}` : '';
   };
 
-  const totalTreasuryAll = treasuryEntries.reduce((sum, e) => sum + e.amount, 0);
+  const totalTreasuryAll = treasuryEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
   const treasuryAmount80 = Math.round(totalTreasuryAll * 0.80);
 
   const handleCopyTreasuryReport = () => {
@@ -529,11 +579,6 @@ export default function PardonCalculatorView() {
       setTreasuryEntries([]);
       notifyToast('Реестр казны очищен', 'info');
     }
-  };
-
-  const handleResetAll = () => {
-    setFio(''); setPassport(''); setPreviousDebt('0'); setRows([]); setManualText('');
-    notifyToast('Все поля очищены', 'info');
   };
 
   return (
