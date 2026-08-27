@@ -904,12 +904,12 @@ export default function PardonCalculatorView() {
   };
 
   const totalTreasuryAll = treasuryEntries.reduce((sum, e) => sum + e.amount, 0);
-  const treasuryAmount85 = Math.round(totalTreasuryAll * 0.85);
+  const treasuryAmount80 = Math.round(totalTreasuryAll * 0.80);
 
   const handleCopyTreasuryReport = () => {
     const dateStr = getTreasuryDateString();
     const fmtTotal = totalTreasuryAll.toLocaleString('ru-RU').replace(/\s/g, '.');
-    const fmtTreasury = treasuryAmount85.toLocaleString('ru-RU').replace(/\s/g, '.');
+    const fmtTreasury = treasuryAmount80.toLocaleString('ru-RU').replace(/\s/g, '.');
     
     const text = `Помилований на ${fmtTotal}$ | ${dateStr}\nНа казне ${fmtTreasury}$`;
     navigator.clipboard.writeText(text);
@@ -956,7 +956,7 @@ export default function PardonCalculatorView() {
           >
             {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
             {toast.type === 'error' && <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />}
-            {toast.type === 'info' && <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />}
+            {toast.type === 'info' && <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />}
             <span>{toast.message}</span>
           </motion.div>
         )}
@@ -968,15 +968,15 @@ export default function PardonCalculatorView() {
           
           {/* Brand & Emblem */}
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 via-sky-500/10 to-transparent border border-indigo-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.2)]">
-              <ShieldCheck className="w-5 h-5 text-indigo-300" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-transparent border border-emerald-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+              <ShieldCheck className="w-5 h-5 text-emerald-300" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base sm:text-lg font-black tracking-tight text-white">
                   SA-GOV
                 </h1>
-                <span className="text-[10px] font-bold font-mono tracking-widest text-indigo-400 px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20">
+                <span className="text-[10px] font-bold font-mono tracking-widest text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                   PARDON REGISTRY
                 </span>
               </div>
@@ -1027,7 +1027,7 @@ export default function PardonCalculatorView() {
           <section className="glass-card p-5 sm:p-6 space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
                   <UserCheck className="w-4 h-4" />
                 </div>
                 <h2 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-200">
@@ -1042,7 +1042,7 @@ export default function PardonCalculatorView() {
                   onClick={() => setCurrentMethod('tesseract')}
                   className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                     currentMethod === 'tesseract' 
-                      ? 'bg-indigo-600 text-white shadow-[0_0_12px_rgba(79,70,229,0.5)]' 
+                      ? 'bg-emerald-600 text-white shadow-[0_0_12px_rgba(16,185,129,0.5)]' 
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -1053,7 +1053,7 @@ export default function PardonCalculatorView() {
                   onClick={() => setCurrentMethod('groq')}
                   className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
                     currentMethod === 'groq' 
-                      ? 'bg-indigo-600 text-white shadow-[0_0_12px_rgba(79,70,229,0.5)]' 
+                      ? 'bg-emerald-600 text-white shadow-[0_0_12px_rgba(16,185,129,0.5)]' 
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -1143,7 +1143,7 @@ export default function PardonCalculatorView() {
                     if (e.dataTransfer.files?.[0]) handleImageFile(e.dataTransfer.files[0]);
                   }}
                   className={`flex-1 luxury-input rounded-xl px-3 py-2.5 cursor-pointer flex items-center justify-center gap-2 transition-all ${
-                    imagePreview ? 'border-indigo-500/40 bg-indigo-500/10' : 'hover:border-white/25'
+                    imagePreview ? 'border-emerald-500/40 bg-emerald-500/10' : 'hover:border-white/25'
                   }`}
                 >
                   <input
@@ -1153,7 +1153,7 @@ export default function PardonCalculatorView() {
                     className="hidden"
                     onChange={e => e.target.files?.[0] && handleImageFile(e.target.files[0])}
                   />
-                  <Upload className="w-4 h-4 text-indigo-400 shrink-0" />
+                  <Upload className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span className="text-xs font-semibold text-slate-300 truncate">
                     {imagePreview ? 'Снимок готов' : 'Загрузить / Ctrl+V'}
                   </span>
@@ -1180,11 +1180,11 @@ export default function PardonCalculatorView() {
               <div className="space-y-1.5 pt-1">
                 <div className="flex justify-between text-[11px] font-medium text-slate-400">
                   <span>{statusMessage || 'Сканирование...'}</span>
-                  <span className="font-mono font-bold text-indigo-300">{Math.round(ocrProgress)}%</span>
+                  <span className="font-mono font-bold text-emerald-300">{Math.round(ocrProgress)}%</span>
                 </div>
                 <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-white/5">
                   <div 
-                    className="bg-gradient-to-r from-indigo-500 via-sky-400 to-indigo-300 h-full transition-all duration-200" 
+                    className="bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-300 h-full transition-all duration-200" 
                     style={{ width: `${ocrProgress}%` }} 
                   />
                 </div>
@@ -1204,7 +1204,7 @@ export default function PardonCalculatorView() {
             {/* Header with Title and Add Row */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
                   <FileText className="w-4 h-4" />
                 </div>
                 <h2 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-200">
@@ -1220,7 +1220,7 @@ export default function PardonCalculatorView() {
                 onClick={handleAddManualRow}
                 className="btn-luxury-ghost flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5 text-indigo-400" />
+                <Plus className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Добавить статью</span>
               </button>
             </div>
@@ -1373,7 +1373,7 @@ export default function PardonCalculatorView() {
         <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-6">
 
           {/* 1. FINANCIAL SUMMARY HERO CARD */}
-          <section className="glass-card p-5 sm:p-6 space-y-5 relative overflow-hidden border-indigo-500/20 shadow-[0_0_40px_rgba(99,102,241,0.08)]">
+          <section className="glass-card p-5 sm:p-6 space-y-5 relative overflow-hidden border-emerald-500/20 shadow-[0_0_40px_rgba(99,102,241,0.08)]">
             
             {/* Top glowing ambient line */}
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-400 to-transparent" />
@@ -1407,7 +1407,7 @@ export default function PardonCalculatorView() {
                       ${finalSum.toLocaleString('ru-RU')}
                     </div>
                   </div>
-                  <Award className="w-6 h-6 text-indigo-400/60 shrink-0" />
+                  <Award className="w-6 h-6 text-emerald-400/60 shrink-0" />
                 </div>
 
                 {rawSum > TOTAL_CAP && (
@@ -1436,21 +1436,21 @@ export default function PardonCalculatorView() {
                 </div>
               </div>
 
-              {/* Split Bar & 2 Sub-tiles (85% / 15%) */}
+              {/* Split Bar & 2 Sub-tiles (80% / 20%) */}
               <div className="space-y-2 pt-1">
                 <div className="flex justify-between text-[11px] font-bold">
-                  <span className="text-sky-300 flex items-center gap-1">
-                    <Building2 className="w-3 h-3" /> Казна 85% (${treasurySum.toLocaleString('ru-RU')})
+                  <span className="text-emerald-300 flex items-center gap-1">
+                    <Building2 className="w-3 h-3" /> Казна 80% (${treasurySum.toLocaleString('ru-RU')})
                   </span>
                   <span className="text-emerald-300 flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" /> Себе 15% (${selfSum.toLocaleString('ru-RU')})
+                    <ShieldCheck className="w-3 h-3" /> Себе 20% (${selfSum.toLocaleString('ru-RU')})
                   </span>
                 </div>
                 
                 {/* Visual Ratio Bar */}
                 <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden flex border border-white/5">
-                  <div className="bg-gradient-to-r from-sky-500 to-indigo-500 h-full" style={{ width: '85%' }} />
-                  <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full" style={{ width: '15%' }} />
+                  <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full" style={{ width: '80%' }} />
+                  <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full" style={{ width: '20%' }} />
                 </div>
               </div>
             </div>
@@ -1459,7 +1459,7 @@ export default function PardonCalculatorView() {
             <div className="space-y-2 pt-2">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
                 <span className="uppercase tracking-wider flex items-center gap-1.5">
-                  <FileCode2 className="w-3.5 h-3.5 text-indigo-400" />
+                  <FileCode2 className="w-3.5 h-3.5 text-emerald-400" />
                   Готовый документ
                 </span>
                 <span className="text-[10px] font-mono text-emerald-400">готово к отправке</span>
@@ -1582,7 +1582,7 @@ export default function PardonCalculatorView() {
             >
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-indigo-400" />
+                  <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
                   <h3 className="text-sm font-bold text-white uppercase tracking-wider">
                     Настройки сервиса
                   </h3>
