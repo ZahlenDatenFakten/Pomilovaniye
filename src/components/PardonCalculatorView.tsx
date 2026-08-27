@@ -546,16 +546,35 @@ export default function PardonCalculatorView() {
     navigator.clipboard.writeText(reportText).then(() => {
       setCopiedReport(true);
       setTimeout(() => setCopiedReport(false), 2500);
+
       if (finalSum > 0) {
         const now = new Date();
+        const dd = String(now.getDate()).padStart(2, '0');
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yyyy = now.getFullYear();
         setTreasuryEntries(prev => [...prev, { 
           id: Date.now().toString(), 
           citizenName: fio.trim() || 'Неизвестный', 
           amount: finalSum, 
-          date: `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}` 
+          date: `${dd}.${mm}.${yyyy}` 
         }]);
       }
-      setPreviousDebt(totalDailyDebt.toString());
+
+      // 1. Update accumulated daily debt
+      const newAccumulated = totalDailyDebt.toString();
+      setPreviousDebt(newAccumulated);
+      try {
+        localStorage.setItem('pardon_daily_accumulated_debt', newAccumulated);
+      } catch (e) {}
+
+      // 2. Clear current citizen dossier and article rows for the next citizen
+      setFio('');
+      setPassport('');
+      setRows([]);
+      setImagePreview(null);
+      setUploadedBase64(null);
+      setManualText('');
+
       notifyToast('Отчёт скопирован, данные занесены в казну!', 'success');
     });
   };
@@ -762,18 +781,52 @@ export default function PardonCalculatorView() {
               <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">Живой расчёт</span>
             </div>
             <div className="space-y-3">
-              <div className="glass-card-subtle p-4 rounded-2xl">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Сумма помилования</span>
-                <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white tabular-nums mt-1">${finalSum.toLocaleString('ru-RU')}</div>
+              <div className="glass-card-subtle p-4 rounded-2xl relative overflow-hidden">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                      Сумма помилования
+                    </span>
+                    <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white tabular-nums mt-1">
+                      ${finalSum.toLocaleString('ru-RU')}
+                    </div>
+                  </div>
+                  <Award className="w-7 h-7 text-emerald-400/50 shrink-0" />
+                </div>
+
+                {rawSum > TOTAL_CAP && (
+                  <div className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/25 text-[11px] font-bold text-amber-300">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>Лимит $170k применён (без лимита: ${rawSum.toLocaleString('ru-RU')})</span>
+                  </div>
+                )}
               </div>
+
               <div className="glass-card-subtle p-3.5 rounded-2xl flex items-center justify-between">
-                <div><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Итоговый суточный долг</span><div className="text-xl sm:text-2xl font-black text-slate-100 font-mono tabular-nums mt-0.5">${totalDailyDebt.toLocaleString('ru-RU')}</div></div>
-                <div className="text-right"><span className="text-[10px] font-mono text-slate-500">Предыдущий</span><div className="text-xs font-mono font-bold text-slate-300">${(totalDailyDebt - finalSum).toLocaleString('ru-RU')}</div></div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Итоговый суточный долг
+                  </span>
+                  <div className="text-xl sm:text-2xl font-black text-slate-100 font-mono tabular-nums mt-0.5">
+                    ${totalDailyDebt.toLocaleString('ru-RU')}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-mono text-slate-500 block">Предыдущий</span>
+                  <div className="text-xs font-mono font-bold text-slate-300">
+                    {prevDebtNum > 0 ? `+$${prevDebtNum.toLocaleString('ru-RU')}` : '$0'}
+                  </div>
+                </div>
               </div>
+
               <div className="space-y-2 pt-1">
                 <div className="flex justify-between text-[11px] font-bold">
-                  <span className="text-emerald-300 flex items-center gap-1"><Building2 className="w-3 h-3" /> Казна 80% (${treasurySum.toLocaleString('ru-RU')})</span>
-                  <span className="text-teal-300 flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Себе 20% (${selfSum.toLocaleString('ru-RU')})</span>
+                  <span className="text-emerald-300 flex items-center gap-1">
+                    <Building2 className="w-3 h-3" /> Казна 80% (${treasurySum.toLocaleString('ru-RU')})
+                  </span>
+                  <span className="text-teal-300 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" /> Себе 20% (${selfSum.toLocaleString('ru-RU')})
+                  </span>
                 </div>
                 <div className="w-full h-2.5 rounded-full bg-slate-950 overflow-hidden flex border border-white/10 p-0.5">
                   <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-l-full" style={{ width: '80%' }} />
