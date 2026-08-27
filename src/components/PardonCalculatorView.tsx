@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CustomSelect } from './CustomSelect';
+import { extractData, extractPassport, extractName, formatName, normalizeDate } from '../lib/ocrExtractor';
 import { 
   Sparkles, 
   Upload, 
@@ -470,10 +471,14 @@ export default function PardonCalculatorView() {
    - Извлеки время, дату и ВСЕ коды статей (например: 17.6, 12.7, 15.6, 17.1).
    - Если указано несколько статей, выведи каждую отдельной строкой.
 
-Формат ответа СТРОГО без лишних слов:
-ФИО: Имя_Фамилия | номер_паспорта
-ЧЧ:ММ ДД.ММ.ГГГГ\tкод_статьи
-ЧЧ:ММ ДД.ММ.ГГГГ\tкод_статьи`;
+Формат ответа СТРОГО валидный JSON без markdown блоков (\`\`\`json ... \`\`\`):
+{
+  "name": "Имя_Фамилия",
+  "passport": "123456",
+  "records": [
+    {"time": "12:34", "date": "12.08.2024", "article": "17.6"}
+  ]
+}`;
 
     try {
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -484,6 +489,7 @@ export default function PardonCalculatorView() {
         },
         body: JSON.stringify({
           model: 'llama-3.2-90b-vision-preview',
+          response_format: { type: "json_object" },
           messages: [{
             role: 'user',
             content: [
@@ -540,8 +546,61 @@ export default function PardonCalculatorView() {
     }
 
     if (raw) {
-      setManualText(raw.trim());
-      parseTextToRows(raw.trim());
+      let rawTrimmed = raw.trim();
+      // In case the model still outputs markdown
+      if (rawTrimmed.startsWith('```json')) {
+        rawTrimmed = rawTrimmed.replace(/^```json/, '').replace(/```$/, '').trim();
+      }
+
+      setManualText(rawTrimmed);
+      
+      if (rawTrimmed.startsWith('{')) {
+        try {
+          const data = JSON.parse(rawTrimmed);
+          if (data.name) setFio(data.name);
+          if (data.passport) setPassport(data.passport);
+          setFioWarning(!data.name || data.name.length < 4);
+          
+          const newRows: PardonArticleRow[] = [];
+          let currentSeq = rowSeq;
+          const seen = new Set<string>();
+          
+          (data.records || []).forEach((rec: any) => {
+            const article = String(rec.article).trim();
+            const date = normalizeDateStr(String(rec.date).trim());
+            const time = String(rec.time).trim();
+            
+            const key = normKey(article) + '|' + date + '|' + time;
+            if (seen.has(key)) return;
+            seen.add(key);
+            
+            let ty = 'medium';
+            const special = fuzzyMatchSpecial(normKey(article));
+            if (special) {
+               ty = special.tyazhest;
+            } else {
+               ty = severityDict[normKey(article)] || SEED_SEVERITY[article] || 'medium';
+            }
+            
+            newRows.push({
+              id: `r-${currentSeq++}`,
+              code: special ? special.display : article,
+              date: date,
+              time: time,
+              tyazhest: ty
+            });
+          });
+          setRowSeq(currentSeq);
+          setRows(newRows);
+          notifyToast(`Успешно извлечено (AI)`, 'success');
+          setIsAnalyzing(false);
+          return;
+        } catch(e) {
+          console.error("JSON parse error from Groq", e);
+        }
+      }
+
+      parseTextToRows(rawTrimmed);
     }
 
     setIsAnalyzing(false);
@@ -567,160 +626,11 @@ export default function PardonCalculatorView() {
 
   // Robust Text Parsing
   const parseTextToRows = (rawText: string) => {
-    const arrestingOfficers = new Set<string>();
-    const linesForOfficers = rawText.split('\n');
-    linesForOfficers.forEach(l => {
-      if (/проводил\s*арест|напарник|lspd|fib|usss|shpd|lscsd|sasp/i.test(l)) {
-        const m = l.match(/\b([A-ZА-ЯЁa-zа-яё0-9]{1,15}[_\s]+[A-ZА-ЯЁa-zа-яё0-9]{1,20})\b/g);
-        if (m) m.forEach(off => arrestingOfficers.add(off.toLowerCase().replace(/[\s\.]+/, '_')));
-      }
-    });
-
-    let foundPass = '';
-    const passHeaderMatch = rawText.match(/Паспорт\s*#?\s*(\d{4,8})/i) || rawText.match(/\b(\d{5,7})\b/);
-    if (passHeaderMatch) {
-      foundPass = passHeaderMatch[1].trim();
-    }
-
-    const BLOCKED_WORDS = new Set([
-      'database', 'gov', 'gta5', 'gta', 'rp', 'lspd', 'fbi', 'fib', 'usss', 'sasp', 'shpd', 'lscsd',
-      'redwood', 'jorno', 'vegas', 'police', 'sheriff', 'government', 'san', 'andreas',
-      'следственный', 'изолятор', 'паспорт', 'гражданин', 'досье', 'база', 'данных',
-      'правонарушителей', 'новости', 'правительство', 'правительства', 'сан', 'андреас',
-      'статья', 'статьи', 'дата', 'время', 'проводил', 'арест', 'напарник',
-      'розыск', 'штраф', 'наличные', 'тюрьма', 'организация', 'должность',
-      'прописка', 'гражданство', 'уровень', 'мужской', 'женский', 'пол',
-      'фио', 'фамилия', 'имя', 'отчество', 'surname', 'passport', 'name',
-      'номер', 'телефон', 'адрес', 'дело', 'судимость', 'судимости',
-      'одобрено', 'отказ', 'помилование', 'помилования', 'калькулятор',
-      'id', 'lvl', 'age', 'level'
-    ]);
-
-    const isCitizenName = (candidate: string): boolean => {
-      if (!candidate) return false;
-      const clean = candidate.trim().replace(/[\s\.]+/g, '_');
-      if (clean.length < 4) return false;
-      if (!/[a-zA-Zа-яА-ЯёЁ]/.test(clean)) return false;
-
-      const parts = clean.split('_').filter(Boolean);
-      if (parts.length < 2) return false;
-
-      for (const part of parts) {
-        const normPart = part.toLowerCase();
-        if (BLOCKED_WORDS.has(normPart)) return false;
-        if (/^\d+$/.test(part)) return false;
-        if (part.length < 2) return false;
-        if (/^\d+[.,]\d+$/.test(part)) return false;
-      }
-
-      const norm = clean.toLowerCase();
-      if (arrestingOfficers.has(norm)) return false;
-      return true;
-    };
-
-    const formatCandidate = (raw: string): string => {
-      if (!raw) return '';
-      let clean = raw.trim().replace(/[\s\.]+/g, '_');
-      clean = clean.replace(/^(?:ФИО|Имя|Паспорт|Пол|ID|Name|Passport)(?=[A-ZА-ЯЁ])/g, '');
-      clean = clean.replace(/^(?:фио|имя|паспорт|пол)(?=[A-Za-z])/i, '');
-      clean = clean.replace(/^(?:id|name|passport)(?=[А-Яа-яЁё])/i, '');
-      clean = clean.replace(/(?<=[a-zA-Z])(?:лет|муж|жен)$/i, '');
-      clean = clean.replace(/(?<=[а-яА-ЯёЁ])(?:lvl|age)$/i, '');
-      clean = clean.replace(/([a-zа-яё])(?:Лет|Муж|Жен|Lvl|Age)$/, '$1');
-      clean = clean.replace(/\d{2,}$/, '');
-      clean = clean.replace(/^\d{2,}/, '');
-
-      const parts = clean.split('_').filter(Boolean);
-      const mainParts = parts.length > 2 ? [parts[0], parts[1]] : parts;
-      
-      return mainParts.map(part => {
-        if (!part) return '';
-        const isCyrillic = /[а-яА-ЯёЁ]/.test(part);
-        let corrected = part;
-        if (isCyrillic) {
-          corrected = corrected
-            .replace(/0/g, 'о')
-            .replace(/1/g, 'и')
-            .replace(/3/g, 'е')
-            .replace(/4/g, 'а')
-            .replace(/6/g, 'б')
-            .replace(/8/g, 'в');
-        } else {
-          corrected = corrected
-            .replace(/0/g, 'o')
-            .replace(/1/g, 'i')
-            .replace(/3/g, 'e')
-            .replace(/4/g, 'a')
-            .replace(/5/g, 's')
-            .replace(/7/g, 't')
-            .replace(/8/g, 'b');
-        }
-        const lower = corrected.toLowerCase();
-        return lower.charAt(0).toUpperCase() + lower.slice(1);
-      }).join('_');
-    };
-
-    let foundName = '';
-
-    const fioFormatMatch = rawText.match(/ФИО:\s*([A-Za-zА-Яа-я0-9_\-\.\s]{3,40})(?:\s*\|\s*(\d{4,8}))?/i);
-    if (fioFormatMatch) {
-      const cand = fioFormatMatch[1].trim();
-      if (isCitizenName(cand)) {
-        foundName = formatCandidate(cand);
-        if (!foundPass && fioFormatMatch[2]) foundPass = fioFormatMatch[2].trim();
-      }
-    }
-
-    if (!foundName) {
-      const nearPassPatterns = [
-        /([A-ZА-Яa-zа-я0-9]{2,20}[_\s]+[A-ZА-Яa-zа-я0-9]{2,20})[\r\n\s]*Паспорт\s*#?\s*(\d{4,8})/i,
-        /Паспорт\s*#?\s*(\d{4,8})[\r\n\s]*([A-ZА-Яa-zа-я0-9]{2,20}[_\s]+[A-ZА-Яa-zа-я0-9]{2,20})/i,
-        /([A-ZА-Яa-zа-я0-9]{2,20}_[A-ZА-Яa-zа-я0-9]{2,20})Паспорт/i
-      ];
-
-      for (const pattern of nearPassPatterns) {
-        const m = rawText.match(pattern);
-        if (m) {
-          const candidate = (m[1] && isNaN(Number(m[1]))) ? m[1] : m[2];
-          if (candidate && isCitizenName(candidate)) {
-            foundName = formatCandidate(candidate);
-            const passCand = (m[1] && !isNaN(Number(m[1]))) ? m[1] : m[2];
-            if (!foundPass && passCand && !isNaN(Number(passCand))) foundPass = passCand;
-            break;
-          }
-        }
-      }
-    }
-
-    if (!foundName && foundPass) {
-      const passPos = rawText.indexOf(foundPass);
-      if (passPos !== -1) {
-        const focusSnippet = rawText.slice(Math.max(0, passPos - 350), Math.min(rawText.length, passPos + 350));
-        const nameRegex = /([A-ZА-Яa-zа-я0-9]{2,20}[_\s]+[A-ZА-Яa-zа-я0-9]{2,20})/g;
-        let m;
-        while ((m = nameRegex.exec(focusSnippet)) !== null) {
-          if (isCitizenName(m[1])) {
-            foundName = formatCandidate(m[1]);
-            break;
-          }
-        }
-      }
-    }
-
-    if (!foundName) {
-      const globalRegex = /([a-zA-Zа-яА-ЯёЁ0-9]{2,20}(?:_[a-zA-Zа-яА-ЯёЁ0-9]{2,20}|\s+[a-zA-Zа-яА-ЯёЁ0-9]{2,20}))/g;
-      let m;
-      while ((m = globalRegex.exec(rawText)) !== null) {
-        if (isCitizenName(m[1])) {
-          foundName = formatCandidate(m[1]);
-          break;
-        }
-      }
-    }
+    const { name: foundName, passport: foundPass } = extractData(rawText);
 
     if (foundName) setFio(foundName);
     if (foundPass) setPassport(foundPass);
-    setFioWarning(!foundName || foundName.length < 5);
+    setFioWarning(!foundName || foundName.length < 4);
 
     const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
     const newParsedRows: PardonArticleRow[] = [];
@@ -935,7 +845,7 @@ export default function PardonCalculatorView() {
   const prevDebtNum = Math.max(0, Number(previousDebt) || 0);
   const finalSum = Math.min(rawSum, TOTAL_CAP);
   const totalDailyDebt = prevDebtNum + finalSum;
-  const treasurySum = Math.round(totalDailyDebt * 0.85);
+  const treasurySum = Math.round(totalDailyDebt * 0.80);
   const selfSum = totalDailyDebt - treasurySum;
 
   const reportText = `Имя Фамилия | Номер паспорта: ${fio.trim() || '—'} | ${passport.trim() || '—'}

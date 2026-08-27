@@ -1,20 +1,66 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════
- *  OCR EXTRACTOR — Ядро извлечения данных из базы GTA 5 RP
+ *  OCR EXTRACTOR — Ядро извлечения данных из базы GTA 5 RP (database.gov)
  * ═══════════════════════════════════════════════════════════════════════
  */
 
 export const CONFIG = {
-  CONTEXT_RADIUS: 180,
+  CONTEXT_RADIUS: 250,
   MIN_NAME_LENGTH: 4,
-  MAX_NAME_LENGTH: 40,
-  STOP_WORDS: [
-    'фио', 'паспорт', 'фамилия', 'уровень', 'мужской', 'женский',
-    'гражданство', 'прописка', 'организация', 'должность',
-    'passport', 'surname', 'статья', 'розыск', 'штраф', 'наличные',
-    'следственный', 'изолятор', 'тюрьма', 'правительство', 'сан', 'андреас', 'government', 'san', 'andreas'
-  ]
+  MAX_NAME_LENGTH: 45
 };
+
+export const CANONICAL_BLOCKED = new Set([
+  'san', 'andreas', 'andpeas', 'san_andreas', 'san_andpeas', 'database', 'gov', 'gta', 'gta5', 'rp',
+  'lspd', 'fib', 'fbi', 'usss', 'sasp', 'shpd', 'lscsd', 'sahp',
+  'redwood', 'jorno', 'vegas', 'alta', 'strawberry', 'downtown', 'hawick', 'sunrise', 'rockford', 'eclipse', 'richman',
+  'police', 'sheriff', 'government', 'pravitelstvo', 'pravitelstva',
+  'sledstvenniy', 'izolyator', 'pasport', 'grazhdanin', 'dosye', 'baza', 'dannih', 'baza_dannih',
+  'pravonarushiteley', 'novosti', 'statya', 'stati', 'data', 'vremya', 'provodil', 'arest', 'naparnik',
+  'kommentariy', 'mesto', 'otbivaniya', 'nakazaniya', 'rozisk', 'shtraf', 'nalichnie', 'tyurma',
+  'organizatsiya', 'dolzhnost', 'propiska', 'grazhdanstvo', 'uroven', 'muzhskoy', 'zhenskiy', 'pol',
+  'fio', 'familiya', 'imya', 'otchestvo', 'surname', 'name', 'nomer', 'telefon', 'adres', 'delo',
+  'sudimost', 'sudimosti', 'istoriya', 'spisok', 'poisk', 'odobreno', 'otkaz', 'pomilovanie', 'pomilovaniya',
+  'kalkulyator', 'id', 'lvl', 'age', 'level', 'smartgi', 'kols', 'kpz', 'lssd', 'yak', 'uak', 'uak_sa'
+]);
+
+/**
+ * Приведение слова к канонической форме для надежного сравнения вне зависимости от шрифта и OCR homoglyphs
+ */
+export function toCanonicalWord(word: string): string {
+  if (!word) return '';
+  return word.toLowerCase()
+    .replace(/[аa@4]/g, 'a')
+    .replace(/[бb6]/g, 'b')
+    .replace(/[вvvw]/g, 'v')
+    .replace(/[гg]/g, 'g')
+    .replace(/[дd]/g, 'd')
+    .replace(/[еeё3]/g, 'e')
+    .replace(/[ж]/g, 'zh')
+    .replace(/[зz]/g, 'z')
+    .replace(/[иiйj1!|]/g, 'i')
+    .replace(/[кk]/g, 'k')
+    .replace(/[лl]/g, 'l')
+    .replace(/[мm]/g, 'm')
+    .replace(/[нn]/g, 'n')
+    .replace(/[оo0]/g, 'o')
+    .replace(/[пp]/g, 'p')
+    .replace(/[рr]/g, 'r')
+    .replace(/[сsc5]/g, 's')
+    .replace(/[тt7]/g, 't')
+    .replace(/[уu]/g, 'u')
+    .replace(/[фf]/g, 'f')
+    .replace(/[хhx]/g, 'h')
+    .replace(/[ц]/g, 'ts')
+    .replace(/[ч]/g, 'ch')
+    .replace(/[ш]/g, 'sh')
+    .replace(/[щ]/g, 'shch')
+    .replace(/[ъь]/g, '')
+    .replace(/[ыy]/g, 'y')
+    .replace(/[эe]/g, 'e')
+    .replace(/[ю]/g, 'yu')
+    .replace(/[я]/g, 'ya');
+}
 
 export interface ArrestRecord {
   time: string;
@@ -31,186 +77,424 @@ export interface ExtractedData {
   rawText: string;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. ОЧИСТКА И ФОРМАТИРОВАНИЕ ИМЕНИ (Title_Case, OCR Leet, Homoglyphs)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CYRILLIC_TO_LATIN_MAP: Record<string, string> = {
+  'а': 'a', 'с': 'c', 'е': 'e', 'о': 'o', 'р': 'p', 'х': 'x', 'у': 'y', 'к': 'k', 'і': 'i',
+  'А': 'A', 'С': 'C', 'Е': 'E', 'О': 'O', 'Р': 'P', 'Х': 'X', 'У': 'Y', 'К': 'K', 'В': 'B', 'Н': 'H', 'М': 'M', 'Т': 'T'
+};
+
+const LATIN_TO_CYRILLIC_MAP: Record<string, string> = {
+  'a': 'а', 'c': 'с', 'e': 'е', 'o': 'о', 'p': 'р', 'x': 'х', 'y': 'у', 'k': 'к', 'i': 'и',
+  'A': 'А', 'C': 'С', 'E': 'Е', 'O': 'О', 'P': 'Р', 'X': 'Х', 'Y': 'У', 'K': 'К', 'B': 'В', 'H': 'Н', 'M': 'М', 'T': 'Т'
+};
+
 /**
- * OCR-коррекция опечаток (0→O, 1→I, 3→E/Е, 4→A...) и приведение к Title_Case
+ * Гармонизация смешанных алфавитов при OCR ошибках (например Vаnyа -> Vanya)
+ */
+export function harmonizeScript(text: string): { text: string; isLatin: boolean } {
+  if (!text) return { text: '', isLatin: true };
+
+  const latinUnambiguous = (text.match(/[dgjhklmqrsuvwzDGIJLNQRSUVWZ]/g) || []).length;
+  const cyrillicUnambiguous = (text.match(/[бгджзийлпфцчшщъыьэюяБГДЖЗИЙЛПФЦЧШЩЪЫЬЭЮЯ]/g) || []).length;
+
+  const totalLatin = (text.match(/[a-zA-Z]/g) || []).length;
+  const totalCyrillic = (text.match(/[а-яА-ЯёЁ]/g) || []).length;
+
+  const isLatin = latinUnambiguous >= cyrillicUnambiguous
+    ? (totalLatin >= totalCyrillic || latinUnambiguous > 0)
+    : (totalLatin > totalCyrillic && cyrillicUnambiguous === 0);
+
+  let harmonized = '';
+  for (const ch of text) {
+    if (isLatin && CYRILLIC_TO_LATIN_MAP[ch]) {
+      harmonized += CYRILLIC_TO_LATIN_MAP[ch];
+    } else if (!isLatin && LATIN_TO_CYRILLIC_MAP[ch]) {
+      harmonized += LATIN_TO_CYRILLIC_MAP[ch];
+    } else {
+      harmonized += ch;
+    }
+  }
+
+  return { text: harmonized, isLatin };
+}
+
+/**
+ * Исправление OCR-опечаток чисел в именах (0→O, 1→I, 3→E, 4→A, 5→S, 7→T, 8→B)
+ */
+export function correctOcrLeet(part: string, isLatin: boolean): string {
+  if (!part) return '';
+  let res = part;
+
+  if (isLatin) {
+    res = res
+      .replace(/0/g, 'o')
+      .replace(/1/g, 'i')
+      .replace(/3/g, 'e')
+      .replace(/4/g, 'a')
+      .replace(/5/g, 's')
+      .replace(/6/g, 'b')
+      .replace(/7/g, 't')
+      .replace(/8/g, 'b')
+      .replace(/9/g, 'g');
+  } else {
+    res = res
+      .replace(/0/g, 'о')
+      .replace(/1/g, 'и')
+      .replace(/3/g, 'е')
+      .replace(/4/g, 'а')
+      .replace(/5/g, 'с')
+      .replace(/6/g, 'б')
+      .replace(/7/g, 'т')
+      .replace(/8/g, 'в');
+  }
+
+  return res;
+}
+
+/**
+ * Очистка кандидата от приклеенных UI-префиксов, суффиксов, мусора
+ */
+export function cleanRawCandidate(raw: string): string {
+  if (!raw) return '';
+
+  let str = raw.trim();
+
+  // Удаление UI префиксов
+  str = str.replace(/^(?:ФИО|Имя|Фамилия|Гражданин|Досье|Паспорт|ID|Name|Passport|Surname)\s*[:\-#№.]*\s*/i, '');
+  str = str.replace(/^[\s,;:!?"'\[\]{}()|\\/<>*~•★✓+=#№-]+/, '');
+  str = str.replace(/^(?:[CС]\d{1,3}|N\s*[яr]|ID\s*\d+)\s+/i, '');
+
+  // Удаление UI суффиксов
+  str = str.replace(/\s*(?:История\s*розыска|Список\s*судимостей|Паспорт\s*#?.*|Следственный.*|КПЗ.*)$/i, '');
+  str = str.replace(/\s*(?:лет|муж|жен|lvl|age|года?)\s*$/i, '');
+  str = str.replace(/[\s,;:!?"'\[\]{}()|\\/<>*~•★✓+=#№-]+$/, '');
+
+  // Удаление приклеенных статей и дат в конце (например, misha_navarov12.8 -> misha_navarov)
+  str = str.replace(/\d{1,2}\.\d{1,2}(?:\.\d{1,2})?$/, '');
+  str = str.replace(/\d{1,2}[.:]\d{1,2}(?:[.:]\d{2,4})?$/, '');
+
+  // Удаление приклеенных цифр в начале или в конце (но не внутри leet)
+  str = str.replace(/^[0-9]{2,}/, '');
+  str = str.replace(/[0-9]{2,}$/, '');
+
+  return str.trim();
+}
+
+/**
+ * Форматирование имени в вид Name_Surname
  */
 export function formatName(rawName: string): string {
   if (!rawName) return '';
 
-  const rawParts = rawName.split('_').filter(Boolean);
+  const cleaned = cleanRawCandidate(rawName);
+  const { text: harmonized, isLatin } = harmonizeScript(cleaned);
+
+  // Разделение по _, -, пробелу, точке
+  let rawParts = harmonized.split(/[_\s\-~.]+/).filter(Boolean);
+
+  // Если части склеены в CamelCase (например VasyaBubanov)
+  if (rawParts.length === 1 && /^[A-ZА-ЯЁ][a-zа-яё0-9]+[A-ZА-ЯЁ][a-zа-яё0-9]+$/.test(rawParts[0])) {
+    const splitMatch = rawParts[0].match(/([A-ZА-ЯЁ][a-zа-яё0-9]+)/g);
+    if (splitMatch && splitMatch.length >= 2) {
+      rawParts = splitMatch;
+    }
+  }
+
+  if (rawParts.length === 0) return '';
+
+  // Берем только первые 2 части (First_Last)
   const parts = rawParts.length > 2 ? [rawParts[0], rawParts[1]] : rawParts;
 
-  return parts.map(part => {
-    if (!part) return '';
-
-    const isCyrillic = /[а-яА-ЯёЁ]/.test(part);
-    let corrected = part;
-
-    if (isCyrillic) {
-      corrected = corrected
-        .replace(/0/g, 'о')
-        .replace(/1/g, 'и')
-        .replace(/3/g, 'е')
-        .replace(/4/g, 'а')
-        .replace(/6/g, 'б')
-        .replace(/8/g, 'в');
-    } else {
-      corrected = corrected
-        .replace(/0/g, 'o')
-        .replace(/1/g, 'i')
-        .replace(/3/g, 'e')
-        .replace(/4/g, 'a')
-        .replace(/5/g, 's')
-        .replace(/7/g, 't')
-        .replace(/8/g, 'b');
-    }
+  const formattedParts = parts.map(p => {
+    let corrected = correctOcrLeet(p, isLatin);
+    // Удаляем все небуквенные символы
+    corrected = corrected.replace(/[^a-zA-Zа-яА-ЯёЁ]/g, '');
+    if (!corrected) return '';
 
     const lower = corrected.toLowerCase();
     return lower.charAt(0).toUpperCase() + lower.slice(1);
-  }).join('_');
+  }).filter(Boolean);
+
+  if (formattedParts.length < 2) {
+    return formattedParts[0] || '';
+  }
+
+  return `${formattedParts[0]}_${formattedParts[1]}`;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. ИЗВЛЕЧЕНИЕ ПАСПОРТА
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Извлечение номера паспорта (с маркерами и без)
+ * Извлечение номера паспорта из текста
  */
-export function extractPassport(text: string): string | null {
-  if (!text) return null;
+export function extractPassport(rawText: string): string | null {
+  if (!rawText || typeof rawText !== 'string') return null;
 
-  const markerMatch = text.match(/(?:Паспорт|ID|#|№)\s*[:\-#№]?\s*(\d{4,8})/i);
-  if (markerMatch) return markerMatch[1];
+  // 1. Прямой маркер карточки "Паспорт #XXXXXX", "Паспорт: XXXXXX", "Паспорт XXXXXX", "Passport #XXXXXX"
+  // Учитываем возможные OCR-искажения слова Паспорт (Паспор7, Macnopm, llacnopt, flacnopm, Поспорт, Пасnорт)
+  const markerMatch = rawText.match(/(?:Паспорт[7т]?|Passport|Macnopm|llacnopt|flacnopm|Поспорт|Пасnорт|nacnopt|ID)\s*[:\-#№~=]?\s*(\d{4,8})/i);
+  if (markerMatch && isValidPassportNumber(markerMatch[1])) {
+    return markerMatch[1];
+  }
 
-  const rawMatch = text.match(/(?:Паспорт|ID|#|№)[^\d\n]{0,10}(\d{4,8})/i);
-  if (rawMatch) return rawMatch[1];
+  // 2. Маркер "#XXXXXX" или "№XXXXXX"
+  const hashMatch = rawText.match(/(?:^|[\s(])(?:#|№)\s*(\d{5,7})(?=[^\d]|$)/m);
+  if (hashMatch && isValidPassportNumber(hashMatch[1])) {
+    return hashMatch[1];
+  }
 
-  const sixDigitMatch = text.match(/(?:^|[^\d])(\d{6})(?=[^\d]|$)/);
-  if (sixDigitMatch) return sixDigitMatch[1];
+  // 3. Форма в левой панели "Номер паспорта \n XXXXXX"
+  const formMatch = rawText.match(/Номер\s*паспорта[\s:\-]*(\d{4,8})/i);
+  if (formMatch && isValidPassportNumber(formMatch[1])) {
+    return formMatch[1];
+  }
 
-  const genericMatch = text.match(/(?:^|[^\d])(\d{5,7})(?=[^\d]|$)/);
-  if (genericMatch) return genericMatch[1];
+  // 4. Поиск 6-значного номера до начала таблицы арестов
+  const tableHeaderIdx = rawText.search(/(?:ДАТА|СТАТЬЯ|ПРОВОДИЛ\s*АРЕСТ|КОММЕНТАРИЙ|\d{1,2}[:;]\d{2}\s+\d{1,2}[./-])/i);
+  const headerText = tableHeaderIdx !== -1 ? rawText.slice(0, tableHeaderIdx) : rawText;
+
+  const sixDigitMatch = headerText.match(/(?:^|[^\d])(\d{6})(?=[^\d]|$)/);
+  if (sixDigitMatch && isValidPassportNumber(sixDigitMatch[1])) {
+    return sixDigitMatch[1];
+  }
+
+  // 5. Общий 5-7 значный номер (исключая даты, суммы, статьи)
+  const genericMatch = headerText.match(/(?:^|[^\d])(\d{5,7})(?=[^\d]|$)/);
+  if (genericMatch && isValidPassportNumber(genericMatch[1])) {
+    return genericMatch[1];
+  }
 
   return null;
 }
 
+function isValidPassportNumber(numStr: string): boolean {
+  if (!numStr || numStr.length < 4 || numStr.length > 8) return false;
+  // Исключаем 8-значные даты вида 18082026
+  if (/^(?:19|20)\d{6}$/.test(numStr) || /^\d{4}(?:19|20)\d{2}$/.test(numStr)) return false;
+  return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. ИЗВЛЕЧЕНИЕ ИМЕН ОФИЦЕРОВ И СТРОК ТАБЛИЦЫ
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Извлечение имен офицеров, чтобы исключить их из поиска гражданина
+ * Извлечение всех имен офицеров из таблицы арестов
  */
 export function extractArrestingOfficers(rawText: string): Set<string> {
   const arrestingOfficers = new Set<string>();
   if (!rawText) return arrestingOfficers;
 
   const lines = rawText.split('\n');
-  lines.forEach(l => {
-    if (/проводил\s*арест|напарник|lspd|fib|usss|shpd|lscsd|sasp/i.test(l)) {
-      const m = l.match(/\b([A-Z][a-z0-9]{1,15}[_\s]+[A-Z][a-z0-9]{1,20})\b/g);
-      if (m) m.forEach(off => arrestingOfficers.add(off.toLowerCase().replace(/\s+/, '_')));
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // Игнорируем строки карточки гражданина, кнопки и шапки
+    if (/Паспорт\s*#?|История\s*розыска|Список\s*судимостей|БАЗА\s*ПРАВОНАРУШИТЕЛЕЙ|ГОСУДАРСТВЕННЫЕ/i.test(trimmed)) {
+      continue;
     }
-  });
-  return arrestingOfficers;
-}
-
-/**
- * Извлечение Имени_Фамилии
- */
-export function extractName(rawText: string, passport?: string | null): string | null {
-  if (!rawText) return null;
-
-  const BLOCKED_WORDS = new Set([
-    'database', 'gov', 'gta5', 'gta', 'rp', 'lspd', 'fbi', 'fib', 'usss', 'sasp', 'shpd', 'lscsd',
-    'redwood', 'jorno', 'vegas', 'police', 'sheriff', 'government', 'san', 'andreas',
-    'следственный', 'изолятор', 'паспорт', 'гражданин', 'досье', 'база', 'данных',
-    'правонарушителей', 'новости', 'правительство', 'правительства', 'сан', 'андреас',
-    'статья', 'статьи', 'дата', 'время', 'проводил', 'арест', 'напарник',
-    'розыск', 'штраф', 'наличные', 'тюрьма', 'организация', 'должность',
-    'прописка', 'гражданство', 'уровень', 'мужской', 'женский', 'пол',
-    'фио', 'фамилия', 'имя', 'отчество', 'surname', 'passport', 'name',
-    'номер', 'телефон', 'адрес', 'дело', 'судимость', 'судимости',
-    'id', 'lvl', 'age', 'level'
-  ]);
-
-  let text = rawText;
-
-  text = text.replace(/(\d{1,2}[.,:]\d{1,2}(?:[.,:]\d{2,4})?)/g, ' $1 ');
-  text = text.replace(/[:;.,!?|\\/(){}\[\]<>+="\-'`~#№]/g, ' $& ');
-
-  const safeRegex = new RegExp(`(${CONFIG.STOP_WORDS.join('|')})`, 'gi');
-  text = text.replace(safeRegex, ' $1 ');
-  text = text.replace(/\s+_\s+|\s+_|_\s+/g, '_');
-  text = text.replace(/\s+/g, ' ').trim();
-
-  const arrestingOfficers = extractArrestingOfficers(rawText);
-  const createRegex = () => /([a-zA-Zа-яА-ЯёЁ0-9]+(?:_[a-zA-Zа-яА-ЯёЁ0-9]+)+)/g;
-
-  const isValidName = (m: string): boolean => {
-    if (!/[a-zA-Zа-яА-ЯёЁ]/.test(m)) return false;
-    const parts = m.split('_').filter(Boolean);
-    if (parts.length < 2) return false;
-
-    for (const part of parts) {
-      const normPart = part.toLowerCase();
-      if (BLOCKED_WORDS.has(normPart)) return false;
-      if (/^\d+$/.test(part)) return false;
-      if (part.length < 2) return false;
-      if (/^\d+[.,]\d+$/.test(part)) return false;
+    // Если строка содержит имя через подчеркивание (Vasya_Bubanov), это гражданин, а не офицер
+    if (/^[a-zA-Zа-яА-ЯёЁ0-9]{2,25}_[a-zA-Zа-яА-ЯёЁ0-9]{2,25}$/.test(trimmed)) {
+      continue;
     }
 
-    const norm = m.toLowerCase();
-    if (arrestingOfficers.has(norm)) return false;
-    return true;
-  };
+    const hasTimestamp = /\b\d{1,2}[:;]\d{2}\b/.test(trimmed) || /\b\d{1,2}[./-]\d{1,2}\b/.test(trimmed);
+    const hasArticle = /\b\d{1,2}\.\d{1,2}\b/.test(trimmed);
+    const hasJail = /следственн|изолятор|кпз|lspd|lssd|sahp|fib|usss|тюрьм/i.test(trimmed);
+    const hasOfficerKeyword = /проводил\s*арест|напарник|арестовал|officer/i.test(trimmed);
 
-  let matches: string[] = [];
-  let match;
+    const isArrestLine = (hasTimestamp && (hasArticle || hasJail)) || (hasArticle && hasJail) || hasOfficerKeyword;
 
-  if (passport) {
-    const passIdx = text.indexOf(passport);
-    if (passIdx !== -1) {
-      const radius = CONFIG.CONTEXT_RADIUS;
-      const start = Math.max(0, passIdx - radius);
-      const end = Math.min(text.length, passIdx + passport.length + radius);
-      const contextChunk = text.slice(start, end);
-
-      const regex = createRegex();
-      while ((match = regex.exec(contextChunk)) !== null) {
-        matches.push(match[1]);
+    if (isArrestLine) {
+      // Ищем имена офицеров (с пробелом: "Darius Watson", "Ace Miles")
+      const matches = trimmed.match(/\b([A-ZА-ЯЁ][a-zа-яё0-9]{1,20}\s+[A-ZА-ЯЁ][a-zа-яё0-9]{1,20})\b/g);
+      if (matches) {
+        for (const m of matches) {
+          const formatted = formatName(m);
+          if (formatted) {
+            arrestingOfficers.add(formatted.toLowerCase());
+            arrestingOfficers.add(formatted.replace('_', '').toLowerCase());
+            arrestingOfficers.add(formatted.replace('_', ' ').toLowerCase());
+          }
+        }
       }
     }
   }
 
-  if (matches.length === 0) {
-    const regex = createRegex();
-    while ((match = regex.exec(text)) !== null) {
-      matches.push(match[1]);
-    }
-  }
-
-  if (matches.length === 0) {
-    const regex = createRegex();
-    while ((match = regex.exec(rawText)) !== null) {
-      matches.push(match[1]);
-    }
-  }
-
-  if (matches.length === 0) return null;
-
-  let validName = matches.find(m => isValidName(m));
-
-  if (!validName) return null;
-
-  // Очистка приклеенных приставок
-  validName = validName.replace(/^(?:ФИО|Имя|Паспорт|Пол|ID|Name|Passport)(?=[A-ZА-ЯЁ])/, '');
-  validName = validName.replace(/^(?:фио|имя|паспорт|пол)(?=[A-Za-z])/i, '');
-  validName = validName.replace(/^(?:id|name|passport)(?=[А-Яа-яЁё])/i, '');
-
-  // Очистка приклеенных суффиксов
-  validName = validName.replace(/(?<=[a-zA-Z])(?:лет|муж|жен)$/i, '');
-  validName = validName.replace(/(?<=[а-яА-ЯёЁ])(?:lvl|age)$/i, '');
-  validName = validName.replace(/([a-zа-яё])(?:Лет|Муж|Жен|Lvl|Age)$/, '$1');
-
-  validName = validName.replace(/\d{2,}$/, '');
-  validName = validName.replace(/^\d{2,}/, '');
-
-  return formatName(validName);
+  return arrestingOfficers;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. ИЗВЛЕЧЕНИЕ ИМЕНИ ГРАЖДАНИНА (extractName)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Проверка, является ли кандидат допустимым именем гражданина
+ */
+export function isValidCitizenName(
+  candidate: string,
+  arrestingOfficers: Set<string>
+): boolean {
+  if (!candidate || typeof candidate !== 'string') return false;
+
+  const formatted = formatName(candidate);
+  if (!formatted) return false;
+
+  const parts = formatted.split('_');
+  if (parts.length < 2) return false;
+
+  const [first, last] = parts;
+  if (first.length < 2 || last.length < 2) return false;
+  if (formatted.length < CONFIG.MIN_NAME_LENGTH || formatted.length > CONFIG.MAX_NAME_LENGTH) return false;
+
+  // Проверка на стоп-слова в канонической форме
+  const canFirst = toCanonicalWord(first);
+  const canLast = toCanonicalWord(last);
+  const canFull = toCanonicalWord(formatted);
+
+  if (CANONICAL_BLOCKED.has(canFirst) || CANONICAL_BLOCKED.has(canLast) || CANONICAL_BLOCKED.has(canFull)) {
+    return false;
+  }
+
+  // Проверка на офицеров
+  const lowerFull = formatted.toLowerCase();
+  if (
+    arrestingOfficers.has(lowerFull) ||
+    arrestingOfficers.has(lowerFull.replace('_', '')) ||
+    arrestingOfficers.has(lowerFull.replace('_', ' ')) ||
+    arrestingOfficers.has(canFull) ||
+    arrestingOfficers.has(canFull.replace('_', ''))
+  ) {
+    return false;
+  }
+
+  // Имя не должно состоять только из цифр или спецсимволов
+  if (!/[a-zA-Zа-яА-ЯёЁ]/.test(first) || !/[a-zA-Zа-яА-ЯёЁ]/.test(last)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Главная функция извлечения имени и фамилии гражданина
+ */
+export function extractName(rawText: string, foundPassport?: string | null): string | null {
+  if (!rawText || typeof rawText !== 'string') return null;
+
+  const arrestingOfficers = extractArrestingOfficers(rawText);
+  const fioMatch = rawText.match(/(?:ФИО|Имя\s*и\s*фамилия|Гражданин|Досье)\s*:\s*([A-Za-zА-Яа-я0-9_\-\.\s]{3,40})(?:\s*\|\s*(\d{4,8}))?/i);
+  if (fioMatch && isValidCitizenName(fioMatch[1], arrestingOfficers)) {
+    return formatName(fioMatch[1]);
+  }
+
+  // ── СТРАТЕГИЯ 2: Карточка гражданина — контекст непосредственно над/рядом с "Паспорт #" ──
+  // В интерфейсе database.gov имя ВСЕГДА стоит крупно рядом с фото прямо над "Паспорт #XXXXXX"
+  const nearPassportPatterns = [
+    // 1. Имя через подчеркивание перед паспортом на той же строке или несколькими строками выше
+    /(?<![a-zA-Zа-яА-ЯёЁ0-9])((?:[a-zA-Zа-яА-ЯёЁ0-9]{2,25}_){1,3}[a-zA-Zа-яА-ЯёЁ0-9]{2,25})(?![a-zA-Zа-яА-ЯёЁ0-9])[\r\n\s]*(?:История\s*розыска|Список\s*судимостей)?[\r\n\s]*(?:Паспорт[7т]?|Passport|Macnopm|llacnopt|flacnopm|Поспорт|Пасnорт|nacnopt|ID)\s*[:\-#№~=]?\s*\d{4,8}/i,
+    // 2. Паспорт, а затем имя через подчеркивание
+    /(?:Паспорт[7т]?|Passport|Macnopm|llacnopt|flacnopm|Поспорт|Пасnорт|nacnopt|ID)\s*[:\-#№~=]?\s*\d{4,8}[\r\n\s]*(?<![a-zA-Zа-яА-ЯёЁ0-9])((?:[a-zA-Zа-яА-ЯёЁ0-9]{2,25}_){1,3}[a-zA-Zа-яА-ЯёЁ0-9]{2,25})(?![a-zA-Zа-яА-ЯёЁ0-9])/i,
+    // 3. Склейка без разделителя: "Name_SurnameПаспорт"
+    /(?<![a-zA-Zа-яА-ЯёЁ0-9])((?:[a-zA-Zа-яА-ЯёЁ0-9]{2,25}_){1,3}[a-zA-Zа-яА-ЯёЁ0-9]{2,25})(?:Паспорт|Passport)/i,
+    // 4. Имя через пробел/дефис строго перед паспортом (без захвата заголовков)
+    /(?:^|[\r\n\t])\s*(?:[CС]\d{1,3}\s+)?([A-ZА-ЯЁ][a-zа-яё0-9]{1,20}[\s\-~][A-ZА-ЯЁ][a-zа-яё0-9]{1,20})[\r\n\s]*(?:Паспорт[7т]?|Passport|Macnopm|llacnopt|flacnopm|Поспорт|Пасnорт|nacnopt|ID)\s*[:\-#№~=]?\s*\d{4,8}/i,
+    // 5. Паспорт, а затем имя через пробел/дефис
+    /(?:Паспорт[7т]?|Passport|Macnopm|llacnopt|flacnopm|Поспорт|Пасnорт|nacnopt|ID)\s*[:\-#№~=]?\s*\d{4,8}[\r\n\s]*([A-ZА-ЯЁ][a-zа-яё0-9]{1,20}[\s\-~][A-ZА-ЯЁ][a-zа-яё0-9]{1,20})/i
+  ];
+
+  for (const pattern of nearPassportPatterns) {
+    const match = rawText.match(pattern);
+    if (match && match[1]) {
+      const candidate = match[1];
+      if (isValidCitizenName(candidate, arrestingOfficers)) {
+        return formatName(candidate);
+      }
+    }
+  }
+
+  // ── СТРАТЕГИЯ 3: Имя рядом с кнопками "История розыска" / "Список судимостей" ──
+  const buttonContextMatch = rawText.match(/(?<![a-zA-Zа-яА-ЯёЁ0-9])((?:[a-zA-Zа-яА-ЯёЁ0-9]{2,25}_){1,3}[a-zA-Zа-яА-ЯёЁ0-9]{2,25})(?![a-zA-Zа-яА-ЯёЁ0-9])[\r\n\s]*(?:История\s*розыска|Список\s*судимостей)/i) ||
+                            rawText.match(/(?:История\s*розыска|Список\s*судимостей)[\r\n\s]*(?<![a-zA-Zа-яА-ЯёЁ0-9])((?:[a-zA-Zа-яА-ЯёЁ0-9]{2,25}_){1,3}[a-zA-Zа-яА-ЯёЁ0-9]{2,25})(?![a-zA-Zа-яА-ЯёЁ0-9])/i);
+  if (buttonContextMatch && buttonContextMatch[1]) {
+    const candidate = buttonContextMatch[1];
+    if (isValidCitizenName(candidate, arrestingOfficers)) {
+      return formatName(candidate);
+    }
+  }
+
+  // ── СТРАТЕГИЯ 4: Строгий поиск по формату "Firstname_Lastname" (через нижнее подчеркивание) ДО таблицы ──
+  // В GTA 5 RP имя гражданина в карточке ВСЕГДА пишется через подчеркивание (Vasya_Bubanov, Kafka_Blood)
+  // Разделяем текст на заголовочную часть (карточка) и таблицу
+  const tableStartIdx = rawText.search(/(?:ДАТА|СТАТЬЯ|ПРОВОДИЛ\s*АРЕСТ|КОММЕНТАРИЙ|\d{1,2}[:;]\d{2}\s+\d{1,2}[./-])/i);
+  const cardHeaderText = tableStartIdx !== -1 ? rawText.slice(0, tableStartIdx) : rawText;
+
+  const underscoreRegex = /(?<![a-zA-Zа-яА-ЯёЁ0-9])((?:[a-zA-Zа-яА-ЯёЁ0-9]{2,25}_){1,3}[a-zA-Zа-яА-ЯёЁ0-9]{2,25})(?![a-zA-Zа-яА-ЯёЁ0-9])/g;
+  let uMatch;
+  while ((uMatch = underscoreRegex.exec(cardHeaderText)) !== null) {
+    const candidate = uMatch[1];
+    if (isValidCitizenName(candidate, arrestingOfficers)) {
+      return formatName(candidate);
+    }
+  }
+
+  // ── СТРАТЕГИЯ 5: Окно вокруг позиции паспорта в тексте ──
+  if (foundPassport) {
+    const passPos = rawText.indexOf(foundPassport);
+    if (passPos !== -1) {
+      const radius = CONFIG.CONTEXT_RADIUS;
+      const snippet = rawText.slice(Math.max(0, passPos - radius), Math.min(rawText.length, passPos + radius + foundPassport.length));
+
+      // 5.1 Ищем имена с подчеркиванием в радиусе паспорта
+      const uRegexLocal = /(?<![a-zA-Zа-яА-ЯёЁ0-9])((?:[a-zA-Zа-яА-ЯёЁ0-9]{2,25}_){1,3}[a-zA-Zа-яА-ЯёЁ0-9]{2,25})(?![a-zA-Zа-яА-ЯёЁ0-9])/g;
+      let mLoc;
+      while ((mLoc = uRegexLocal.exec(snippet)) !== null) {
+        if (isValidCitizenName(mLoc[1], arrestingOfficers)) {
+          return formatName(mLoc[1]);
+        }
+      }
+
+      // 5.2 Ищем два слова с заглавной буквы в радиусе паспорта
+      const twoWordsRegex = /(?:^|[\s,;:.!?"'\[\]{}()])([A-ZА-ЯЁ][a-zа-яё0-9]{1,20}[\s_]+[A-ZА-ЯЁ][a-zа-яё0-9]{1,20})(?=$|[\s,;:.!?"'\[\]{}()])/g;
+      let mWord;
+      while ((mWord = twoWordsRegex.exec(snippet)) !== null) {
+        if (isValidCitizenName(mWord[1], arrestingOfficers)) {
+          return formatName(mWord[1]);
+        }
+      }
+    }
+  }
+
+  // ── СТРАТЕГИЯ 6: Поиск имени в шапке карточки (два слова с заглавной буквы до таблицы) ──
+  const twoWordsHeaderRegex = /(?:^|[\s,;:.!?"'\[\]{}()])([A-ZА-ЯЁ][a-zа-яё0-9]{1,20}[\s_]+[A-ZА-ЯЁ][a-zа-яё0-9]{1,20})(?=$|[\s,;:.!?"'\[\]{}()])/g;
+  let mHead;
+  while ((mHead = twoWordsHeaderRegex.exec(cardHeaderText)) !== null) {
+    if (isValidCitizenName(mHead[1], arrestingOfficers)) {
+      return formatName(mHead[1]);
+    }
+  }
+
+  // ── СТРАТЕГИЯ 7: Глобальный поиск First_Last по всему тексту (строгое исключение офицеров и таблицы) ──
+  while ((uMatch = underscoreRegex.exec(rawText)) !== null) {
+    const candidate = uMatch[1];
+    if (isValidCitizenName(candidate, arrestingOfficers)) {
+      return formatName(candidate);
+    }
+  }
+
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. ПАРСИНГ ДАННЫХ И СТАТЕЙ ТАБЛИЦЫ
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Базовое извлечение только Имени и Паспорта
@@ -227,7 +511,7 @@ export function extractData(rawText: string): { name: string | null; passport: s
 }
 
 /**
- * Нормализация даты из GTA5RP database.gov (включая обрезанные даты 18.08.20... / 18.08.2... / 18.08)
+ * Нормализация даты (включая обрезанные 18.08.20... / 18.08.2... / 18.08)
  */
 export function normalizeDate(rawDateStr: string): string {
   if (!rawDateStr) return '';
@@ -240,11 +524,7 @@ export function normalizeDate(rawDateStr: string): string {
     const month = parts[1].padStart(2, '0');
     let year = parts[2] || currentYear;
     if (year.length < 4) {
-      if (year.startsWith('20') || year.startsWith('2')) {
-        year = currentYear;
-      } else {
-        year = currentYear;
-      }
+      year = currentYear;
     }
     return `${day}.${month}.${year}`;
   }
@@ -265,7 +545,6 @@ export function parseTableRecords(rawText: string): ArrestRecord[] {
   let lastDate = `01.01.${currentYear}`;
 
   lines.forEach(line => {
-    // Check if line contains date & time (e.g. 17:21 18.08.20... or 09:22 18.08.2026)
     const dtMatch = line.match(/(\d{1,2}[:;]\d{2})\s+(\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?)/) ||
                     line.match(/(\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?)\s+(\d{1,2}[:;]\d{2})/);
 
@@ -280,41 +559,32 @@ export function parseTableRecords(rawText: string): ArrestRecord[] {
       }
     }
 
-    let cleanLine = line;
-    if (dtMatch) {
-      cleanLine = line.replace(dtMatch[0], ' ');
-    }
-    cleanLine = cleanLine.replace(/[a-zA-Zа-яА-ЯёЁ]+/g, ' ');
-    cleanLine = cleanLine.replace(/[,/]/g, '.');
+    let cleanLine = line
+      .replace(/(?:следственн[а-я]+\s+изолятор|федеральн[а-я]+\s+тюрьма|тюрьма|fbi|lspd|fib|sasp|lscsd|sahp)/gi, ' ')
+      .replace(/\b(?:уак[- ]?са|уак|ук[- ]?са|ук|yak[- ]?sa|yak|uk)\b/gi, ' ')
+      .replace(/\b\d{1,2}[:;]\d{2}(?::\d{2})?\b/g, ' ')
+      .replace(/\b\d{1,2}[./-]\d{1,2}(?:[./-][\d.]{1,6})?\b/g, ' ')
+      .replace(/\b(19|20)\d{2}\b/g, ' ')
+      .replace(/\b\d{5,7}\b/g, ' ');
 
-    const tokens = cleanLine.split(/[\s\-]+/).map(t => t.replace(/^\.+|\.+$/g, ''));
+    const articleRegex = /\b\d{1,2}\.\d{1,2}(?:\.\d{1,2})?\b/g;
     const articles: string[] = [];
-
-    for (let t of tokens) {
-      if (!t) continue;
-      if (/^\d{1,2}\.\d{1,2}$/.test(t)) {
-        articles.push(t);
-      } else if (/^\d{1,2}\.\d{1,2}\.\d{1,2}$/.test(t)) {
-        articles.push(t);
-      } else if (/^(\d{1,2}\.\d{1,2})\.(\d{1,2}\.\d{1,2})$/.test(t)) {
-        const m = t.match(/^(\d{1,2}\.\d{1,2})\.(\d{1,2}\.\d{1,2})$/);
-        if (m) { articles.push(m[1]); articles.push(m[2]); }
-      } else {
-        const m = t.match(/\d{1,2}\.\d{1,2}/g);
-        if (m) articles.push(...m);
+    let artMatch;
+    while ((artMatch = articleRegex.exec(cleanLine)) !== null) {
+      const code = artMatch[0];
+      if (!code.startsWith('0')) {
+        articles.push(code);
       }
     }
 
     articles.forEach(art => {
-      if (!art.startsWith('0')) {
-        records.push({
-          time: lastTime,
-          date: lastDate,
-          article: art,
-          officer: '',
-          jail: 'Следственный изолятор'
-        });
-      }
+      records.push({
+        time: lastTime,
+        date: lastDate,
+        article: art,
+        officer: '',
+        jail: 'Следственный изолятор'
+      });
     });
   });
 
@@ -336,7 +606,7 @@ export function parseOcrText(rawText: string): ExtractedData {
 }
 
 /**
- * Асинхронная обертка для распознавания изображения через Tesseract.js
+ * Асинхронная обертка для распознавания изображения через Tesseract.js в браузере
  */
 export async function recognizeAndExtract(
   imageUrl: string,
@@ -357,7 +627,8 @@ export async function recognizeAndExtract(
 
   const whitelist = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789 _-.,:;#№/|';
   await worker.setParameters({
-    tessedit_char_whitelist: whitelist
+    tessedit_char_whitelist: whitelist,
+    tessedit_pageseg_mode: '3'
   });
 
   const result = await worker.recognize(imageUrl);
@@ -367,3 +638,4 @@ export async function recognizeAndExtract(
 
   return parseOcrText(text);
 }
+

@@ -161,6 +161,111 @@ Misha_Navarov
     { name: 'Misha_Navarov', passport: '590831' }
   );
 
+  /* РЕАЛЬНЫЕ СКРИНШОТЫ ИЗ СЕССИИ */
+  total++; passed += runTest(
+    'Реальный скриншот 1: Vasya_Bubanov (паспорт #622088, офицер Darius Watson)',
+    `DATABASE --
+Имя
+Имя...
+Фамилия
+Фамилия...
+Номер паспорта
+622088
+БАЗА ПРАВОНАРУШИТЕЛЕЙ ГОСУДАРСТВЕННЫЕ НОВОСТИ
+Vasya_Bubanov
+История розыска Список судимостей
+Паспорт #622088
+ДАТА СТАТЬЯ ПРОВОДИЛ АРЕСТ КОММЕНТАРИЙ МЕСТО ОТБЫВАНИЯ НАКАЗАНИЯ
+20:14 18.08.2... 12.8 16.1 Darius Watson . Следственный изолятор`,
+    { name: 'Vasya_Bubanov', passport: '622088' }
+  );
+
+  total++; passed += runTest(
+    'Реальный скриншот 2: Vanya_Giuliano (паспорт #471650, 6 офицеров в таблице)',
+    `DATABASE -- БАЗА ПРАВОНАРУШИТЕЛЕЙ ГОСУДАРСТВЕННЫЕ НОВОСТИ
+Имя
+Имя... Vanya_Giuliano История розыска Список судимостей
+Паспорт #471650
+Фамилия
+Фамилия... ДАТА СТАТЬЯ ПРОВОДИЛ АРЕСТ КОММЕНТАРИЙ МЕСТО ОТБЫВАНИЯ НАКАЗАНИЯ
+00:27 17.07.20... 25.1 Ace Miles - КПЗ LSPD
+Номер паспорта 22:13 16.07.20... 25.3 Lin Lafyan - КПЗ LSPD
+471650
+15:24 16.07.20... 12.7 Garry Nekrasov gov36852 Следственный изолятор
+01:33 06.07.2... 25.6 yak Omori Graff - КПЗ LSPD
+00:40 06.07.2... 15.5 УК 25.1 У... Justice Casagrande Токсик Следственный изолятор
+22:24 05.07.2... 12.7 Dazai Haas - Следственный изолятор
+Поиск`,
+    { name: 'Vanya_Giuliano', passport: '471650' }
+  );
+
+  total++; passed += runTest(
+    'Реальный скриншот 3: Kafka_Blood (паспорт #196776, офицер Zahar Raze)',
+    `DATABASE.gov
+Поиск
+15:30 01.08.2026
+Kafka_Blood
+Паспорт #196776
+12.8 12.10 16.16 уак
+Zahar Raze
+БАЗА ПРАВОНАРУШИТЕЛЕЙ ГОСУДАРСТВЕННЫЕ НОВОСТИ
+aw-sc-0008 41470 Следственный изолятор`,
+    { name: 'Kafka_Blood', passport: '196776' }
+  );
+
+  total++; passed += runTest(
+    'Реальный скриншот 4: Tatsuki_Delgado (паспорт #255384, офицеры Misha Maysky, Mira Kirov)',
+    `DATABASE --
+Имя
+Имя...
+Фамилия
+Фамилия...
+Номер паспорта
+255384
+Поиск
+Tatsuki_Delgado
+Паспорт #255384
+БАЗА ПРАВОНАРУШИТЕЛЕЙ ГОСУДАРСТВЕННЫЕ НОВОСТИ
+История розыска Список судимостей
+ДАТА СТАТЬЯ ПРОВОДИЛ АРЕСТ КОММЕНТАРИЙ МЕСТО ОТБЫВАНИЯ НАКАЗАНИЯ
+20:01 03.08.2... 25.5 YAK-SA Misha Maysky - КПЗ LSSD
+15:33 31.05.2... 17.1 12.8 yak Mira Kirov - Следственный изолятор`,
+    { name: 'Tatsuki_Delgado', passport: '255384' }
+  );
+
+  total++; passed += runTest(
+    'Кейс Teo_Tumanov: OCR искажения Teo_Tum4n0v',
+    `DATABASE.GOV Teo_Tum4n0v Паспорт #334455 История розыска`,
+    { name: 'Teo_Tumanov', passport: '334455' }
+  );
+
+  total++; passed += runTest(
+    'Кейс Tatsuki_Delgado с OCR-опечатками (T4tsuk1_D3lgad0)',
+    `DATABASE.GOV T4tsuk1_D3lgad0 Паспорт #255384`,
+    { name: 'Tatsuki_Delgado', passport: '255384' }
+  );
+
+  total++; passed += runTest(
+    'Кейс Kafka_Blood с OCR-опечатками (K4fka_8lood)',
+    `DATABASE.GOV K4fka_8lood Паспорт #196776`,
+    { name: 'Kafka_Blood', passport: '196776' }
+  );
+
+  total++; passed += runTest(
+    'Смешанные шрифты: Vаnyа_Giuliаnо (смешение кириллических а, о и латиницы)',
+    `DATABASE.GOV Vаnyа_Giuliаnо Паспорт #471650`,
+    { name: 'Vanya_Giuliano', passport: '471650' }
+  );
+
+  total++; passed += runTest(
+    'Никогда не брать офицера, если имя гражданина отсутствует',
+    `DATABASE.GOV
+База данных правительства Сан-Андреас
+Паспорт #998877
+ДАТА СТАТЬЯ ПРОВОДИЛ АРЕСТ КОММЕНТАРИЙ МЕСТО ОТБЫВАНИЯ НАКАЗАНИЯ
+20:14 18.08.2026 12.8 Darius Watson Следственный изолятор`,
+    { name: null, passport: '998877' }
+  );
 
   console.log('\n═══════════════════════════════════════════════════════════════');
   console.log(`  РЕЗУЛЬТАТ: ${passed}/${total} тестов пройдено`);
@@ -172,3 +277,4 @@ Misha_Navarov
 runAllTests();
 
 module.exports = { runAllTests };
+

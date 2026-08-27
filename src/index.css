@@ -265,3 +265,12 @@ body::after {
 .animate-pulse-glow {
   animation: pulse-glow 2.5s infinite ease-in-out;
 }
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 8s ease-in-out infinite;
+}
