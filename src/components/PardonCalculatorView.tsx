@@ -1542,7 +1542,7 @@ export default function PardonCalculatorView() {
 
             {/* Treasury Preview & Copy */}
             <div className="document-terminal p-3 rounded-xl font-mono text-xs text-slate-300 whitespace-pre-line leading-relaxed select-all">
-              {`Помилований на ${totalTreasuryAll.toLocaleString('ru-RU').replace(/\s/g, '.')}$ | ${getTreasuryDateString()}\nНа казне ${treasuryAmount85.toLocaleString('ru-RU').replace(/\s/g, '.')}$`}
+              {`Помилований на ${totalTreasuryAll.toLocaleString('ru-RU').replace(/\s/g, '.')}$ | ${getTreasuryDateString()}\nНа казне ${treasuryAmount80.toLocaleString('ru-RU').replace(/\s/g, '.')}$`}
             </div>
 
             {/* Action Buttons */}
