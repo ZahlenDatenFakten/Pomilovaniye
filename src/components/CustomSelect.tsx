@@ -25,12 +25,12 @@ interface CustomSelectProps<T extends string | number = string> {
   label?: string;
 }
 
-const SEVERITY_COLORS: Record<string, { dot: string; bg: string; text: string }> = {
-  admin: { dot: 'bg-sky-400', bg: 'bg-sky-500/10 border-sky-500/20', text: 'text-sky-300' },
-  small: { dot: 'bg-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-300' },
-  medium: { dot: 'bg-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', text: 'text-amber-300' },
-  heavy: { dot: 'bg-orange-400', bg: 'bg-orange-500/10 border-orange-500/20', text: 'text-orange-300' },
-  especially: { dot: 'bg-rose-400', bg: 'bg-rose-500/10 border-rose-500/20', text: 'text-rose-300' }
+const SEVERITY_COLORS: Record<string, { dot: string; text: string }> = {
+  admin: { dot: 'bg-zinc-400', text: 'text-zinc-300' },
+  small: { dot: 'bg-emerald-400', text: 'text-emerald-300' },
+  medium: { dot: 'bg-amber-400', text: 'text-amber-300' },
+  heavy: { dot: 'bg-orange-400', text: 'text-orange-300' },
+  especially: { dot: 'bg-rose-400', text: 'text-rose-300' }
 };
 
 export function CustomSelect<T extends string | number = string>({
@@ -58,7 +58,7 @@ export function CustomSelect<T extends string | number = string>({
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
-      const placeAbove = spaceBelow < 260 && rect.top > 260;
+      const placeAbove = spaceBelow < 240 && rect.top > 240;
 
       setCoords({
         top: placeAbove ? rect.top : rect.bottom,
@@ -73,10 +73,7 @@ export function CustomSelect<T extends string | number = string>({
     if (isOpen) {
       updateCoords();
 
-      const handleScrollOrResize = () => {
-        updateCoords();
-      };
-
+      const handleScrollOrResize = () => updateCoords();
       const handleClickOutside = (event: MouseEvent) => {
         const target = event.target as Node;
         if (
@@ -87,14 +84,20 @@ export function CustomSelect<T extends string | number = string>({
         }
       };
 
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') setIsOpen(false);
+      };
+
       window.addEventListener('scroll', handleScrollOrResize, true);
       window.addEventListener('resize', handleScrollOrResize);
       document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('keydown', handleKeyDown);
 
       return () => {
         window.removeEventListener('scroll', handleScrollOrResize, true);
         window.removeEventListener('resize', handleScrollOrResize);
         document.removeEventListener('mousedown', handleClickOutside);
+        window.removeEventListener('keydown', handleKeyDown);
       };
     }
   }, [isOpen]);
@@ -111,15 +114,15 @@ export function CustomSelect<T extends string | number = string>({
   };
 
   const sizeClasses = {
-    sm: 'px-2.5 py-1.5 text-xs font-semibold rounded-lg min-h-[32px]',
-    md: 'px-3.5 py-2 text-sm font-semibold rounded-xl min-h-[40px]',
-    lg: 'px-4 py-2.5 text-sm font-bold rounded-xl min-h-[46px]'
+    sm: 'px-2.5 py-1 text-xs font-semibold rounded-md min-h-[30px]',
+    md: 'px-3 py-1.5 text-sm font-semibold rounded-lg min-h-[36px]',
+    lg: 'px-4 py-2 text-sm font-bold rounded-lg min-h-[42px]'
   };
 
   return (
     <div className={`relative inline-block w-full ${className}`}>
       {label && (
-        <label className="text-[11px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider">
+        <label className="text-[11px] font-bold text-zinc-400 block mb-1 uppercase tracking-wider">
           {label}
         </label>
       )}
@@ -130,23 +133,23 @@ export function CustomSelect<T extends string | number = string>({
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-2 luxury-input text-slate-100 transition-all duration-150 cursor-pointer ${
+        className={`w-full flex items-center justify-between gap-2 dark-input text-zinc-100 transition-all duration-100 cursor-pointer ${
           sizeClasses[size]
-        } ${isOpen ? 'border-emerald-500/60 ring-2 ring-emerald-500/20 bg-slate-900/90' : ''} ${
+        } ${isOpen ? 'border-emerald-500 ring-1 ring-emerald-500/30 bg-[#0C0C0F]' : ''} ${
           disabled ? 'opacity-40 cursor-not-allowed' : ''
         } ${buttonClassName}`}
       >
         <span className="truncate flex items-center gap-1.5">
           {colorStyle && (
-            <span className={`w-2 h-2 rounded-full shrink-0 ${colorStyle.dot} shadow-[0_0_8px_currentColor]`} />
+            <span className={`w-2 h-2 rounded-full shrink-0 ${colorStyle.dot}`} />
           )}
-          <span className={selectedOption && selectedOption.value ? (colorStyle ? colorStyle.text : 'text-slate-100 font-semibold') : 'text-slate-500'}>
+          <span className={selectedOption && selectedOption.value ? (colorStyle ? colorStyle.text : 'text-zinc-100 font-semibold') : 'text-zinc-500'}>
             {selectedOption && selectedOption.value ? selectedOption.label : placeholder}
           </span>
         </span>
 
         <ChevronDown
-          className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${
+          className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-100 ${
             isOpen ? 'rotate-180 text-white' : ''
           }`}
         />
@@ -157,22 +160,22 @@ export function CustomSelect<T extends string | number = string>({
         <AnimatePresence>
           <motion.div
             ref={dropdownRef}
-            initial={{ opacity: 0, y: coords.placeAbove ? 6 : -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: coords.placeAbove ? 6 : -6, scale: 0.98 }}
-            transition={{ duration: 0.14, ease: 'easeOut' }}
+            initial={{ opacity: 0, y: coords.placeAbove ? 4 : -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: coords.placeAbove ? 4 : -4 }}
+            transition={{ duration: 0.1, ease: 'easeOut' }}
             style={{
               position: 'fixed',
-              top: coords.placeAbove ? 'auto' : `${coords.top + 6}px`,
-              bottom: coords.placeAbove ? `${window.innerHeight - coords.top + 6}px` : 'auto',
+              top: coords.placeAbove ? 'auto' : `${coords.top + 4}px`,
+              bottom: coords.placeAbove ? `${window.innerHeight - coords.top + 4}px` : 'auto',
               left: `${coords.left}px`,
               width: `${coords.width}px`,
               zIndex: 999999,
             }}
-            className={`max-h-72 overflow-y-auto bg-[#0E1422]/98 border border-white/10 rounded-xl shadow-2xl shadow-black/90 backdrop-blur-2xl p-1.5 space-y-0.5 ${dropdownClassName}`}
+            className={`max-h-64 overflow-y-auto bg-[#0A0A0D] border border-zinc-800 rounded-xl shadow-2xl shadow-black p-1 space-y-0.5 ${dropdownClassName}`}
           >
             {options.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-slate-500 italic text-center">
+              <div className="px-3 py-2 text-xs text-zinc-500 italic text-center">
                 Нет вариантов
               </div>
             ) : (
@@ -189,15 +192,15 @@ export function CustomSelect<T extends string | number = string>({
                     onClick={() => handleSelect(option.value, isDisabled)}
                     className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-left transition-all rounded-lg cursor-pointer ${
                       isSelected
-                        ? 'bg-emerald-500/15 border border-emerald-500/30 text-white font-bold'
-                        : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'
+                        ? 'bg-zinc-800/90 border border-zinc-700 text-white font-bold'
+                        : 'text-zinc-300 hover:bg-zinc-900 hover:text-white'
                     } ${isDisabled ? 'opacity-30 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center gap-2 truncate">
                       {optColor ? (
                         <span className={`w-2 h-2 rounded-full shrink-0 ${optColor.dot}`} />
                       ) : (
-                        <span className="w-2 h-2 rounded-full shrink-0 bg-slate-600" />
+                        <span className="w-2 h-2 rounded-full shrink-0 bg-zinc-600" />
                       )}
                       <span className={`truncate font-medium ${optColor ? optColor.text : ''}`}>
                         {option.label}
@@ -216,6 +219,3 @@ export function CustomSelect<T extends string | number = string>({
     </div>
   );
 }
-
-
-
