@@ -20,21 +20,20 @@ import {
   DollarSign, 
   Building2, 
   AlertTriangle, 
-  Award, 
   ShieldCheck, 
   Zap, 
   SlidersHorizontal,
   X,
   History,
-  TrendingUp,
-  FileCode2,
   CheckCircle2,
   Undo2,
   Info,
   Scale,
   Landmark,
   User,
-  Hash
+  Hash,
+  ArrowRight,
+  ExternalLink
 } from 'lucide-react';
 
 export interface PardonArticleRow {
@@ -68,7 +67,7 @@ interface ConfirmModalState {
   description: string;
   confirmText: string;
   cancelText?: string;
-  variant: 'danger' | 'warning' | 'info' | 'emerald';
+  variant: 'danger' | 'warning' | 'info' | 'emerald' | 'cyan';
   badge?: string;
   onConfirm: () => void;
 }
@@ -590,7 +589,7 @@ export default function PardonCalculatorView() {
       isOpen: true,
       title: 'Очистить форму?',
       description: 'Все введенные данные гражданина, прикрепленный снимок и добавленные статьи будут очищены.',
-      confirmText: 'Очистить',
+      confirmText: 'Очистить форму',
       variant: 'warning',
       badge: `${rows.length} статей в форме`,
       onConfirm: () => {
@@ -715,7 +714,7 @@ export default function PardonCalculatorView() {
     setUploadedBase64(null);
     setManualText('');
 
-    notifyToast('Отчёт скопирован, сумма занесена в казну!', 'success');
+    notifyToast('Отчёт скопирован, данные занесены в казну!', 'success');
   };
 
   const handleCopyOnlyText = async () => {
@@ -760,43 +759,43 @@ export default function PardonCalculatorView() {
   };
 
   return (
-    <div className="w-full space-y-3">
-      {/* GLOBAL DRAG OVERLAY */}
+    <div className="w-full space-y-3.5">
+      {/* GLOBAL DRAG OVERLAY - ZERO BLUR */}
       <AnimatePresence>
         {isGlobalDragging && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center p-6 border-2 border-dashed border-emerald-500 m-3 rounded-2xl pointer-events-none"
+            className="fixed inset-0 z-[9999] bg-[#06080B]/95 flex flex-col items-center justify-center p-6 border-2 border-dashed border-cyan-500 m-3 rounded-2xl pointer-events-none"
           >
-            <Upload className="w-10 h-10 text-emerald-400 mb-2 animate-bounce" />
-            <h3 className="text-base font-bold text-white tracking-tight">Отпустите скриншот базы данных</h3>
-            <p className="text-xs text-zinc-400 mt-0.5">Файл автоматически подготовится к распознаванию</p>
+            <Upload className="w-10 h-10 text-cyan-400 mb-2 animate-bounce" />
+            <h3 className="text-base font-bold text-white tracking-tight">Отпустите снимок базы данных</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Снимок автоматически подготовится к распознаванию статей</p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* TOAST SYSTEM */}
+      {/* TOAST NOTIFICATIONS - CRISP & LIGHTWEIGHT */}
       <AnimatePresence>
         {toast && (
           <motion.div
             key={toast.id}
-            initial={{ opacity: 0, y: -14, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -14, scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-[99990] flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-[#111114] border border-zinc-800 shadow-2xl shadow-black text-xs font-medium text-white"
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.12 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[99990] flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-[#0E1520] border border-[#1E293B] shadow-2xl text-xs font-medium text-white"
           >
-            {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+            {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />}
             {toast.type === 'error' && <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />}
-            {toast.type === 'info' && <Info className="w-4 h-4 text-zinc-300 shrink-0" />}
-            <span className="text-zinc-200">{toast.message}</span>
+            {toast.type === 'info' && <Info className="w-4 h-4 text-slate-300 shrink-0" />}
+            <span className="text-slate-200">{toast.message}</span>
             {toast.action && (
               <button
                 type="button"
                 onClick={toast.action.onClick}
-                className="ml-1 px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-emerald-400 font-semibold text-[11px] flex items-center gap-1 transition-all cursor-pointer active:scale-95"
+                className="ml-1 px-2 py-0.5 rounded bg-[#182333] hover:bg-[#202E42] text-cyan-400 font-semibold text-[11px] flex items-center gap-1 transition-all cursor-pointer active:scale-95"
               >
                 <Undo2 className="w-3 h-3" />
                 <span>{toast.action.label}</span>
@@ -821,7 +820,7 @@ export default function PardonCalculatorView() {
         />
       )}
 
-      {/* TEXT COPY MODAL */}
+      {/* TEXT COPY MODAL FALLBACK */}
       <AnimatePresence>
         {textCopyModal && textCopyModal.isOpen && (
           <div className="fixed inset-0 z-[99995] flex items-center justify-center p-4">
@@ -829,18 +828,20 @@ export default function PardonCalculatorView() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
               onClick={() => setTextCopyModal(null)}
-              className="fixed inset-0 bg-black/90 backdrop-blur-sm"
+              className="fixed inset-0 bg-[#040608]/85"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-lg bg-[#0A0A0C] border border-zinc-800 rounded-xl p-5 shadow-2xl z-10 space-y-3"
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.12 }}
+              className="relative w-full max-w-lg bg-[#0B0F15] border border-[#1E293B] rounded-xl p-5 shadow-2xl z-10 space-y-3"
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white">{textCopyModal.title}</h3>
-                <button onClick={() => setTextCopyModal(null)} className="text-zinc-400 hover:text-white p-1 cursor-pointer">
+                <button onClick={() => setTextCopyModal(null)} className="text-slate-400 hover:text-white p-1 cursor-pointer">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -849,13 +850,13 @@ export default function PardonCalculatorView() {
                 rows={6}
                 value={textCopyModal.text}
                 onClick={e => (e.target as HTMLTextAreaElement).select()}
-                className="w-full dark-input p-3 font-mono text-xs text-zinc-200 resize-none select-all"
+                className="w-full dark-input p-3 font-mono text-xs text-slate-200 resize-none select-all"
               />
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setTextCopyModal(null)}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 text-zinc-300 hover:text-white cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#121A26] text-slate-300 hover:text-white cursor-pointer"
                 >
                   Закрыть
                 </button>
@@ -865,73 +866,77 @@ export default function PardonCalculatorView() {
         )}
       </AnimatePresence>
 
-      {/* TOP APPLICATION BAR */}
-      <header className="dark-panel px-4 py-2 flex flex-wrap items-center justify-between gap-3">
+      {/* TOP COCKPIT HEADER */}
+      <header className="dark-panel px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 border-[#1C2736]">
         {/* Brand identity */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-[#101722] border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-sm">
             <Scale className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-white tracking-tight">SA-GOV</span>
-              <span className="text-[10px] font-mono font-medium text-emerald-400 px-1.5 py-0.2 rounded bg-emerald-500/10 border border-emerald-500/20">
+              <span className="text-xs font-extrabold text-white tracking-tight uppercase">SA-GOV</span>
+              <span className="text-[10px] font-mono font-bold text-cyan-300 px-1.5 py-0.2 rounded bg-cyan-500/10 border border-cyan-500/25">
                 PARDON REGISTRY
+              </span>
+              <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-medium text-slate-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
+                <span>ONLINE</span>
               </span>
             </div>
           </div>
         </div>
 
-        {/* Task navigation tabs (Icon + Label, strictly no emoji) */}
-        <nav className="flex items-center p-0.5 rounded-lg bg-[#050507] border border-zinc-800 text-xs font-medium">
+        {/* Task navigation tabs */}
+        <nav className="flex items-center p-0.5 rounded-lg bg-[#070A0F] border border-[#1C2736] text-xs font-medium">
           <button
             type="button"
             onClick={() => setMainTab('calculator')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md transition-all cursor-pointer ${
               mainTab === 'calculator'
-                ? 'bg-zinc-800 text-white font-semibold'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-[#15202E] text-cyan-300 font-bold border border-cyan-500/30'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <FileText className="w-3.5 h-3.5 text-emerald-400" />
+            <FileText className="w-3.5 h-3.5 text-cyan-400" />
             <span>Оформление гражданина</span>
           </button>
 
           <button
             type="button"
             onClick={() => setMainTab('treasury')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md transition-all cursor-pointer ${
               mainTab === 'treasury'
-                ? 'bg-zinc-800 text-white font-semibold'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-[#15202E] text-cyan-300 font-bold border border-cyan-500/30'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Landmark className="w-3.5 h-3.5 text-amber-400" />
             <span>Реестр казны</span>
             {treasuryEntries.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono">
+              <span className="ml-1 px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-mono font-bold">
                 {treasuryEntries.length}
               </span>
             )}
           </button>
         </nav>
 
-        {/* Controls */}
+        {/* Quick Utility Actions */}
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
             className="btn-dark-ghost flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium"
-            title="Настройки сервиса"
+            title="Настройки сервиса (API Key / Распознавание)"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
             <span className="hidden sm:inline">Настройки</span>
           </button>
 
           <button
             type="button"
             onClick={handlePromptResetAll}
-            className="btn-dark-ghost flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-zinc-400 hover:text-rose-400"
+            className="btn-dark-ghost flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-400 hover:text-rose-400"
             title="Очистить форму"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -940,28 +945,31 @@ export default function PardonCalculatorView() {
         </div>
       </header>
 
-      {/* TAB 1: PARDON WORKSPACE */}
+      {/* TAB 1: COCKPIT CALCULATOR WORKSPACE */}
       {mainTab === 'calculator' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-3.5 items-start">
           
-          {/* LEFT SIDE (7 COLS): DOSSIER + ARTICLES */}
-          <div className="lg:col-span-7 space-y-3">
+          {/* LEFT SIDE (7 COLS): DOSSIER + SMART SCAN + ARTICLES MATRIX */}
+          <div className="xl:col-span-7 space-y-3.5">
             
-            {/* DOSSIER & SCAN BAR */}
-            <section className="dark-panel p-3.5 space-y-3">
-              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
-                <h2 className="text-xs font-bold text-white tracking-wide">
-                  Досье гражданина
-                </h2>
-                <span className="text-[11px] text-zinc-400">
+            {/* DOSSIER & SCAN MODULE */}
+            <section className="dark-panel p-4 space-y-3 border-[#1C2736]">
+              <div className="flex items-center justify-between border-b border-[#1C2736] pb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
+                  <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Досье гражданина
+                  </h2>
+                </div>
+                <span className="text-[11px] text-slate-400 font-mono">
                   Ctrl+V для вставки снимка
                 </span>
               </div>
 
-              {/* Input row */}
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+              {/* Citizen Details Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                 <div className="sm:col-span-5">
-                  <label className="text-[11px] font-medium text-zinc-300 block mb-1">
+                  <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
                     Имя Фамилия
                   </label>
                   <input
@@ -969,12 +977,12 @@ export default function PardonCalculatorView() {
                     placeholder="Danek_Fillin"
                     value={fio}
                     onChange={e => setFio(e.target.value)}
-                    className="w-full dark-input px-3 py-1.5 text-xs font-medium"
+                    className="w-full dark-input px-3 py-1.5 text-xs font-semibold text-white"
                   />
                 </div>
 
                 <div className="sm:col-span-4">
-                  <label className="text-[11px] font-medium text-zinc-300 block mb-1">
+                  <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
                     Номер паспорта
                   </label>
                   <input
@@ -982,19 +990,19 @@ export default function PardonCalculatorView() {
                     placeholder="601226"
                     value={passport}
                     onChange={e => setPassport(e.target.value)}
-                    className="w-full dark-input px-3 py-1.5 text-xs font-mono font-bold text-emerald-400"
+                    className="w-full dark-input px-3 py-1.5 text-xs font-mono font-bold text-cyan-300"
                   />
                 </div>
 
                 <div className="sm:col-span-3">
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] font-medium text-zinc-300 block">
+                    <label className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
                       Суточный долг
                     </label>
                     <button
                       type="button"
                       onClick={handlePromptResetDailyDebt}
-                      className="text-[10px] font-mono text-zinc-400 hover:text-white cursor-pointer"
+                      className="text-[10px] font-mono text-cyan-400 hover:text-cyan-300 cursor-pointer"
                       title="Сбросить долг в $0"
                     >
                       Сброс ($0)
@@ -1011,7 +1019,7 @@ export default function PardonCalculatorView() {
                 </div>
               </div>
 
-              {/* Integrated Image Drop / OCR Bar */}
+              {/* Integrated Image Drop / OCR Scanner Bar */}
               <div>
                 <input
                   type="file"
@@ -1024,32 +1032,32 @@ export default function PardonCalculatorView() {
                 {!imagePreview ? (
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full p-2.5 rounded-lg border border-dashed border-zinc-800 hover:border-zinc-700 bg-[#050507] flex items-center justify-between cursor-pointer transition-colors group"
+                    className="w-full p-2.5 rounded-lg border border-dashed border-[#1C2736] hover:border-cyan-500/50 bg-[#070A0F] flex items-center justify-between cursor-pointer transition-colors group"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-emerald-400">
+                      <div className="w-6 h-6 rounded bg-[#101722] border border-[#1C2736] flex items-center justify-center text-slate-400 group-hover:text-cyan-400 transition-colors">
                         <Upload className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-xs text-zinc-300 group-hover:text-white">
-                        Загрузить или вставить скриншот базы данных
+                      <span className="text-xs text-slate-300 group-hover:text-white transition-colors">
+                        Загрузить или вставить скриншот базы данных (database.gov)
                       </span>
                     </div>
-                    <span className="text-[10px] font-mono text-zinc-400 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">
+                    <span className="text-[10px] font-mono text-cyan-400/80 px-2 py-0.5 rounded bg-[#0E1520] border border-[#1C2736]">
                       Ctrl+V
                     </span>
                   </div>
                 ) : (
-                  <div className="p-2.5 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.03] space-y-2">
+                  <div className="p-2.5 rounded-lg border border-cyan-500/30 bg-[#091018] space-y-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span className="text-xs font-semibold text-emerald-300 truncate max-w-[200px]">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <span className="text-xs font-bold text-cyan-300 truncate max-w-[220px]">
                           {uploadedFileName || 'Скриншот прикреплен'}
                         </span>
                         <button
                           type="button"
                           onClick={handleClearImage}
-                          className="text-zinc-400 hover:text-rose-400 p-0.5 cursor-pointer"
+                          className="text-slate-400 hover:text-rose-400 p-0.5 cursor-pointer"
                           title="Удалить снимок"
                         >
                           <X className="w-3 h-3" />
@@ -1057,25 +1065,25 @@ export default function PardonCalculatorView() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center p-0.5 rounded bg-black border border-zinc-800 text-[10px] font-semibold">
+                        <div className="flex items-center p-0.5 rounded bg-[#06080B] border border-[#1C2736] text-[10px] font-bold">
                           <button
                             type="button"
                             onClick={() => setCurrentMethod('tesseract')}
                             className={`px-2 py-0.5 rounded cursor-pointer ${
-                              currentMethod === 'tesseract' ? 'bg-zinc-800 text-white' : 'text-zinc-400'
+                              currentMethod === 'tesseract' ? 'bg-[#15202E] text-cyan-300 font-bold' : 'text-slate-400'
                             }`}
                           >
-                            OCR
+                            OCR (Local)
                           </button>
                           <button
                             type="button"
                             onClick={() => setCurrentMethod('groq')}
                             className={`px-2 py-0.5 rounded cursor-pointer flex items-center gap-1 ${
-                              currentMethod === 'groq' ? 'bg-zinc-800 text-emerald-400' : 'text-zinc-400'
+                              currentMethod === 'groq' ? 'bg-[#15202E] text-cyan-300 font-bold' : 'text-slate-400'
                             }`}
                           >
                             <Sparkles className="w-2.5 h-2.5" />
-                            <span>AI</span>
+                            <span>AI Vision</span>
                           </button>
                         </div>
 
@@ -1083,7 +1091,7 @@ export default function PardonCalculatorView() {
                           type="button"
                           onClick={handleAnalyzeImage}
                           disabled={isAnalyzing}
-                          className="btn-emerald-cta px-3 py-1 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                          className="btn-cyan-cta px-3 py-1 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
                         >
                           {isAnalyzing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
                           <span>{isAnalyzing ? `${Math.round(ocrProgress)}%` : 'Распознать'}</span>
@@ -1092,9 +1100,9 @@ export default function PardonCalculatorView() {
                     </div>
 
                     {isAnalyzing && (
-                      <div className="w-full bg-black rounded-full h-1 overflow-hidden border border-zinc-800">
+                      <div className="w-full bg-[#06080B] rounded-full h-1 overflow-hidden border border-[#1C2736]">
                         <div
-                          className="bg-emerald-500 h-full transition-all duration-100"
+                          className="bg-cyan-400 h-full transition-all duration-100"
                           style={{ width: `${ocrProgress}%` }}
                         />
                       </div>
@@ -1104,14 +1112,15 @@ export default function PardonCalculatorView() {
               </div>
             </section>
 
-            {/* ARTICLES & OFFENSES */}
-            <section className="dark-panel p-3.5 space-y-2.5">
-              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+            {/* ARTICLES & OFFENSES HUB */}
+            <section className="dark-panel p-4 space-y-3 border-[#1C2736]">
+              <div className="flex items-center justify-between border-b border-[#1C2736] pb-2">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xs font-bold text-white tracking-wide">
+                  <div className="w-2 h-2 rounded-full bg-teal-400"></div>
+                  <h2 className="text-xs font-bold text-white uppercase tracking-wider">
                     Статьи и судимости
                   </h2>
-                  <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 text-[10px] font-mono text-zinc-300">
+                  <span className="px-1.5 py-0.2 rounded-full bg-[#101722] border border-[#1C2736] text-[10px] font-mono font-bold text-cyan-300">
                     {rowCalculations.length}
                   </span>
                 </div>
@@ -1119,68 +1128,68 @@ export default function PardonCalculatorView() {
                 <button
                   type="button"
                   onClick={handleAddManualRow}
-                  className="btn-dark-ghost flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-400 hover:text-emerald-300 cursor-pointer"
+                  className="btn-cyan-subtle flex items-center gap-1 px-2.5 py-1 text-xs font-bold cursor-pointer"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3.5 h-3.5" />
                   <span>Добавить статью</span>
                 </button>
               </div>
 
-              {/* Quick Article Buttons */}
+              {/* Rapid Presets Bar */}
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[10px] text-zinc-400 font-mono mr-0.5">Быстрые:</span>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider mr-1">Быстрые:</span>
                 {QUICK_ARTICLES.map(preset => (
                   <button
                     key={preset.code}
                     type="button"
                     onClick={() => handleQuickAddArticle(preset)}
-                    className="px-2 py-0.5 rounded bg-[#0D0D10] hover:bg-[#16161C] border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-[11px] font-medium transition-all cursor-pointer active:scale-95 flex items-center gap-1"
+                    className="px-2 py-0.5 rounded bg-[#0E1520] hover:bg-[#141F2E] border border-[#1C2736] hover:border-cyan-500/40 text-slate-300 hover:text-white text-[11px] font-medium transition-all cursor-pointer active:scale-95 flex items-center gap-1"
                   >
-                    <Plus className="w-2.5 h-2.5 text-zinc-400" />
+                    <Plus className="w-2.5 h-2.5 text-cyan-400" />
                     <span>{preset.label}</span>
                   </button>
                 ))}
               </div>
 
-              {/* Articles Table */}
-              <div className="overflow-x-auto scrollbar-hide pt-0.5">
+              {/* High-Performance Articles Table */}
+              <div className="overflow-x-auto scrollbar-hide pt-1">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-zinc-800/80 text-zinc-400 uppercase tracking-wider text-[9px] font-bold">
-                      <th className="pb-1.5 px-1.5 w-6"></th>
-                      <th className="pb-1.5 px-1.5">Статья</th>
-                      <th className="pb-1.5 px-1.5">Дата</th>
-                      <th className="pb-1.5 px-1.5">Время</th>
-                      <th className="pb-1.5 px-1.5">Тяжесть</th>
-                      <th className="pb-1.5 px-1.5 text-right">Пошлина</th>
-                      <th className="pb-1.5 px-1.5 text-right">Статус</th>
+                    <tr className="border-b border-[#1C2736] text-slate-400 uppercase tracking-wider text-[9px] font-bold">
+                      <th className="pb-2 px-1.5 w-6"></th>
+                      <th className="pb-2 px-1.5">Статья</th>
+                      <th className="pb-2 px-1.5">Дата</th>
+                      <th className="pb-2 px-1.5">Время</th>
+                      <th className="pb-2 px-1.5">Тяжесть</th>
+                      <th className="pb-2 px-1.5 text-right">Пошлина</th>
+                      <th className="pb-2 px-1.5 text-right">Статус</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-800/50">
+                  <tbody className="divide-y divide-[#16202E]">
                     {rowCalculations.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-7 text-center text-zinc-400 text-xs">
-                          <FileSearch className="w-6 h-6 mx-auto text-zinc-400 mb-1" />
-                          <p className="text-zinc-300 font-medium">Статьи не добавлены</p>
-                          <p className="text-[11px] text-zinc-400 mt-0.5">
-                            Выберите статью из быстрых кнопок или прикрепите снимок
+                        <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
+                          <FileSearch className="w-7 h-7 mx-auto text-slate-500 mb-1.5" />
+                          <p className="text-slate-300 font-bold">Статьи ещё не добавлены</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Воспользуйтесь быстрыми кнопками вверху или вставьте скриншот (Ctrl+V)
                           </p>
                         </td>
                       </tr>
                     ) : (
                       rowCalculations.map(row => (
-                        <tr key={row.id} className="hover:bg-zinc-900/40 transition-colors">
-                          <td className="py-1 px-1 w-6">
+                        <tr key={row.id} className="hover:bg-[#0E1520] transition-colors">
+                          <td className="py-1.5 px-1 w-6">
                             <button
                               type="button"
                               onClick={() => handleRemoveRow(row.id)}
-                              className="p-1 rounded text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 cursor-pointer"
-                              title="Удалить"
+                              className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-[#1A2433] cursor-pointer"
+                              title="Удалить статью"
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
                           </td>
-                          <td className="py-1 px-1.5">
+                          <td className="py-1.5 px-1.5">
                             <input
                               type="text"
                               value={row.code}
@@ -1188,33 +1197,33 @@ export default function PardonCalculatorView() {
                               className="dark-input px-2 py-1 text-xs font-mono font-bold text-white w-24"
                             />
                           </td>
-                          <td className="py-1 px-1.5">
+                          <td className="py-1.5 px-1.5">
                             <input
                               type="text"
                               value={row.date}
                               onChange={e => handleUpdateRow(row.id, 'date', e.target.value)}
-                              className="dark-input px-2 py-1 text-xs font-mono text-zinc-200 w-24"
+                              className="dark-input px-2 py-1 text-xs font-mono text-slate-200 w-24"
                             />
                           </td>
-                          <td className="py-1 px-1.5">
+                          <td className="py-1.5 px-1.5">
                             <div className="flex items-center gap-1">
                               <input
                                 type="text"
                                 value={row.time}
                                 onChange={e => handleUpdateRow(row.id, 'time', e.target.value)}
-                                className="dark-input px-2 py-1 text-xs font-mono text-zinc-200 w-16"
+                                className="dark-input px-2 py-1 text-xs font-mono text-slate-200 w-16"
                               />
                               <button
                                 type="button"
                                 onClick={() => setRowTimeToNow(row.id)}
-                                className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-white cursor-pointer"
+                                className="p-1 rounded hover:bg-[#162130] text-slate-400 hover:text-cyan-400 cursor-pointer"
                                 title="Поставить текущее время"
                               >
                                 <Clock className="w-3 h-3" />
                               </button>
                             </div>
                           </td>
-                          <td className="py-1 px-1.5">
+                          <td className="py-1.5 px-1.5">
                             <CustomSelect
                               value={row.tyazhest}
                               onChange={val => handleUpdateRow(row.id, 'tyazhest', val)}
@@ -1222,15 +1231,15 @@ export default function PardonCalculatorView() {
                               size="sm"
                             />
                           </td>
-                          <td className="py-1 px-1.5 text-right font-mono font-bold text-xs tabular-nums text-zinc-100">
+                          <td className="py-1.5 px-1.5 text-right font-mono font-bold text-xs tabular-nums text-slate-100">
                             {row.price ? `$${row.price.toLocaleString('ru-RU')}` : '—'}
                           </td>
-                          <td className="py-1 px-1.5 text-right text-[10px] font-bold">
+                          <td className="py-1.5 px-1.5 text-right text-[10px] font-bold">
                             <span
                               className={`px-2 py-0.5 rounded ${
                                 row.isBlocked
                                   ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                  : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                  : 'bg-teal-500/10 text-teal-400 border border-teal-500/25'
                               }`}
                             >
                               {row.statusText}
@@ -1245,104 +1254,113 @@ export default function PardonCalculatorView() {
             </section>
           </div>
 
-          {/* RIGHT SIDE (5 COLS): FINANCIAL HUB & OUTPUT */}
-          <div className="lg:col-span-5 space-y-3 lg:sticky lg:top-4">
+          {/* RIGHT SIDE (5 COLS): STICKY FINANCIAL COMMAND HUB - ALWAYS IN VIEW! */}
+          <div className="xl:col-span-5 space-y-3.5 xl:sticky xl:top-4">
             
-            {/* FINANCIAL ACTION PANEL */}
             <section className="dark-panel-hero p-4 space-y-3.5">
-              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
-                <h2 className="text-xs font-bold text-white tracking-wide">
-                  Расчёт и выдача
-                </h2>
-                <span className="text-[10px] font-mono text-emerald-400 px-1.5 py-0.2 rounded bg-emerald-500/10">
-                  Готово к выдаче
+              <div className="flex items-center justify-between border-b border-[#1C2736] pb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
+                  <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Финансовый командный центр
+                  </h2>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-cyan-300 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/25">
+                  РАСЧЁТ ГОТОВ
                 </span>
               </div>
 
               {/* Large Fee Display */}
-              <div className="p-3.5 rounded-lg bg-[#060608] border border-zinc-800 space-y-0.5">
-                <span className="text-[11px] font-medium text-zinc-300 block">
-                  К оплате гражданином:
-                </span>
+              <div className="p-4 rounded-xl bg-[#06090F] border border-[#1C2736] space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    К оплате гражданином:
+                  </span>
+                  <span className="text-[10px] font-mono text-teal-400">
+                    {rowCalculations.filter(r => !r.isBlocked).length} активных статей
+                  </span>
+                </div>
+                
                 <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white tabular-nums">
                   ${finalSum.toLocaleString('ru-RU')}
                 </div>
 
                 {rawSum > TOTAL_CAP && (
-                  <div className="pt-1">
-                    <span className="inline-block px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] font-bold text-amber-400">
+                  <div className="pt-1.5">
+                    <span className="inline-block px-2.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/25 text-[10px] font-bold text-amber-400">
                       Лимит $170 000 применен (без лимита: ${rawSum.toLocaleString('ru-RU')})
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* 80 / 20 Split */}
-              <div className="p-3 rounded-lg bg-[#060608] border border-zinc-800 space-y-2">
+              {/* 80 / 20 Split Allocation */}
+              <div className="p-3.5 rounded-xl bg-[#06090F] border border-[#1C2736] space-y-2.5">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-300 flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>В казну (80%):</span>
+                  <span className="text-slate-300 flex items-center gap-1.5 font-medium">
+                    <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>В казну штата (80%):</span>
                   </span>
-                  <span className="font-mono font-bold text-emerald-400 text-sm">
+                  <span className="font-mono font-bold text-cyan-300 text-sm tabular-nums">
                     ${treasurySum.toLocaleString('ru-RU')}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-300 flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>Сотруднику (20%):</span>
+                  <span className="text-slate-300 flex items-center gap-1.5 font-medium">
+                    <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+                    <span>Вознаграждение сотруднику (20%):</span>
                   </span>
-                  <span className="font-mono font-bold text-zinc-200 text-sm">
+                  <span className="font-mono font-bold text-slate-200 text-sm tabular-nums">
                     ${selfSum.toLocaleString('ru-RU')}
                   </span>
                 </div>
 
-                <div className="w-full h-1.5 rounded-full bg-zinc-900 overflow-hidden flex border border-zinc-800">
-                  <div className="bg-emerald-500 h-full rounded-l-full" style={{ width: '80%' }} />
-                  <div className="bg-zinc-500 h-full rounded-r-full" style={{ width: '20%' }} />
+                {/* Split Allocation Progress Bar */}
+                <div className="w-full h-1.5 rounded-full bg-[#121A26] overflow-hidden flex border border-[#1C2736]">
+                  <div className="bg-cyan-500 h-full rounded-l-full" style={{ width: '80%' }} />
+                  <div className="bg-teal-400 h-full rounded-r-full" style={{ width: '20%' }} />
                 </div>
 
-                <div className="pt-1 flex justify-between text-[11px] text-zinc-300 border-t border-zinc-800/80">
+                <div className="pt-1.5 flex justify-between text-[11px] text-slate-300 border-t border-[#1C2736]">
                   <span>Суточный долг за смену:</span>
-                  <span className="font-mono font-bold text-white">${totalDailyDebt.toLocaleString('ru-RU')}</span>
+                  <span className="font-mono font-bold text-white tabular-nums">${totalDailyDebt.toLocaleString('ru-RU')}</span>
                 </div>
               </div>
 
-              {/* Primary Action Button */}
+              {/* HERO PRIMARY ACTION BUTTON (COPY & SUBMIT) */}
               <button
                 type="button"
                 onClick={handleCopyReportAndRecord}
-                className="btn-emerald-cta w-full py-3 px-4 flex items-center justify-center gap-2 text-xs font-bold text-black cursor-pointer shadow-lg shadow-emerald-500/10"
+                className="btn-cyan-cta w-full py-3.5 px-4 flex items-center justify-center gap-2 text-xs font-black text-[#04070A] uppercase tracking-wide cursor-pointer shadow-md"
               >
                 {copiedReport ? (
                   <>
-                    <Check className="w-4 h-4" />
+                    <Check className="w-4 h-4 text-black stroke-[3]" />
                     <span>Отчёт скопирован и внесён в казну!</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-4 h-4" />
+                    <Copy className="w-4 h-4 text-black stroke-[2.5]" />
                     <span>Скопировать отчёт и внести в казну</span>
                   </>
                 )}
               </button>
 
-              {/* Preview */}
-              <div className="space-y-1 pt-1">
-                <div className="flex items-center justify-between text-[11px] text-zinc-300">
-                  <span>Текст готового отчёта:</span>
+              {/* Report Preview & 1-Click Copy Text */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between text-[11px] text-slate-400">
+                  <span className="uppercase tracking-wider font-bold text-[10px]">Готовый рапорт для базы:</span>
                   <button
                     type="button"
                     onClick={handleCopyOnlyText}
-                    className="text-zinc-400 hover:text-emerald-400 cursor-pointer flex items-center gap-1 text-[11px]"
+                    className="text-slate-400 hover:text-cyan-300 cursor-pointer flex items-center gap-1 text-[11px] font-medium"
                   >
                     <Copy className="w-3 h-3" />
-                    <span>Копировать только текст</span>
+                    <span>Только текст</span>
                   </button>
                 </div>
-                <div className="dark-terminal p-2.5 rounded-lg font-mono text-[11px] text-zinc-300 whitespace-pre-line leading-relaxed select-all">
+                <div className="dark-terminal p-3 rounded-lg font-mono text-[11px] text-slate-300 whitespace-pre-line leading-relaxed select-all border-[#1C2736]">
                   {reportText}
                 </div>
               </div>
@@ -1351,16 +1369,19 @@ export default function PardonCalculatorView() {
         </div>
       )}
 
-      {/* TAB 2: TREASURY LEDGER */}
+      {/* TAB 2: TREASURY LEDGER WORKSPACE */}
       {mainTab === 'treasury' && (
-        <div className="dark-panel p-4 space-y-3.5">
-          <div className="flex flex-wrap items-center justify-between border-b border-zinc-800 pb-2.5 gap-2">
+        <div className="dark-panel p-4 space-y-3.5 border-[#1C2736]">
+          <div className="flex flex-wrap items-center justify-between border-b border-[#1C2736] pb-3 gap-2">
             <div>
-              <h2 className="text-xs font-bold text-white uppercase tracking-wider">
-                Реестр казны за текущую смену
-              </h2>
-              <p className="text-[11px] text-zinc-400">
-                История помилований и сводный отчёт
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+                <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+                  Реестр казны за текущую смену
+                </h2>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Автоматический учёт всех выданных помилований и формирование сводного рапорта
               </p>
             </div>
 
@@ -1368,15 +1389,15 @@ export default function PardonCalculatorView() {
               <button
                 type="button"
                 onClick={handleCopyTreasuryReport}
-                className="btn-dark-ghost px-3 py-1.5 text-xs font-medium flex items-center gap-1.5"
+                className="btn-cyan-subtle px-3 py-1.5 text-xs font-bold flex items-center gap-1.5"
               >
-                <Copy className="w-3.5 h-3.5 text-emerald-400" />
+                <Copy className="w-3.5 h-3.5" />
                 <span>Скопировать отчёт казны</span>
               </button>
               <button
                 type="button"
                 onClick={handlePromptClearTreasury}
-                className="px-3 py-1.5 rounded-md bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1.5 rounded-md bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Очистить реестр</span>
@@ -1384,34 +1405,52 @@ export default function PardonCalculatorView() {
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <div className="p-3 rounded-lg bg-[#060608] border border-zinc-800">
-              <span className="text-[11px] font-medium text-zinc-300 block">Помиловано граждан</span>
+          {/* KPI Metrics Strip */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-3.5 rounded-xl bg-[#06090F] border border-[#1C2736]">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Помиловано граждан
+              </span>
               <div className="text-2xl font-bold font-mono text-white mt-0.5">
                 {treasuryEntries.length}
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-[#060608] border border-zinc-800">
-              <span className="text-[11px] font-medium text-zinc-300 block">Общая сумма</span>
+            <div className="p-3.5 rounded-xl bg-[#06090F] border border-[#1C2736]">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Общая сумма помилований
+              </span>
               <div className="text-2xl font-bold font-mono text-white mt-0.5">
                 ${totalTreasuryAll.toLocaleString('ru-RU')}
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-[#060608] border border-emerald-500/20">
-              <span className="text-[11px] font-medium text-emerald-400 block">К сдаче в казну (80%)</span>
-              <div className="text-2xl font-bold font-mono text-emerald-400 mt-0.5">
+            <div className="p-3.5 rounded-xl bg-[#06090F] border border-cyan-500/30">
+              <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">
+                К сдаче в казну (80%)
+              </span>
+              <div className="text-2xl font-bold font-mono text-cyan-300 mt-0.5">
                 ${treasuryAmount80.toLocaleString('ru-RU')}
               </div>
             </div>
           </div>
 
           {/* Shift Report Terminal */}
-          <div className="p-3 rounded-lg bg-[#060608] border border-zinc-800 space-y-1">
-            <span className="text-[11px] font-medium text-zinc-300 block">Отчёт для рапорта:</span>
-            <div className="font-mono text-xs text-zinc-200 whitespace-pre-line select-all">
+          <div className="p-3.5 rounded-xl bg-[#06090F] border border-[#1C2736] space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Отчёт для рапорта сдачи казны:
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyTreasuryReport}
+                className="text-cyan-400 hover:text-cyan-300 text-xs flex items-center gap-1 font-semibold cursor-pointer"
+              >
+                <Copy className="w-3 h-3" />
+                <span>Скопировать</span>
+              </button>
+            </div>
+            <div className="dark-terminal p-2.5 rounded font-mono text-xs text-slate-200 whitespace-pre-line select-all border-[#1C2736]">
               {treasuryReportText}
             </div>
           </div>
@@ -1420,37 +1459,37 @@ export default function PardonCalculatorView() {
           <div className="overflow-x-auto scrollbar-hide pt-1">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[9px] font-bold">
-                  <th className="pb-1.5 px-2">Гражданин</th>
-                  <th className="pb-1.5 px-2">Дата</th>
-                  <th className="pb-1.5 px-2 text-right">Сумма помилования</th>
-                  <th className="pb-1.5 px-2 text-right">В казну (80%)</th>
-                  <th className="pb-1.5 px-2 text-right w-16">Действие</th>
+                <tr className="border-b border-[#1C2736] text-slate-400 uppercase tracking-wider text-[9px] font-bold">
+                  <th className="pb-2 px-2.5">Гражданин</th>
+                  <th className="pb-2 px-2.5">Дата</th>
+                  <th className="pb-2 px-2.5 text-right">Сумма помилования</th>
+                  <th className="pb-2 px-2.5 text-right">В казну (80%)</th>
+                  <th className="pb-2 px-2.5 text-right w-16">Действие</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/50">
+              <tbody className="divide-y divide-[#16202E]">
                 {treasuryEntries.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-7 text-center text-zinc-400 text-xs">
-                      Реестр пуст. Оформите гражданина во вкладке «Оформление гражданина».
+                    <td colSpan={5} className="py-8 text-center text-slate-400 text-xs">
+                      Реестр смены пуст. Оформите гражданина во вкладке «Оформление гражданина».
                     </td>
                   </tr>
                 ) : (
                   treasuryEntries.map(entry => (
-                    <tr key={entry.id} className="hover:bg-zinc-900/40">
-                      <td className="py-2 px-2 font-bold text-white">{entry.citizenName}</td>
-                      <td className="py-2 px-2 font-mono text-zinc-400">{entry.date}</td>
-                      <td className="py-2 px-2 text-right font-mono font-bold text-zinc-200">
+                    <tr key={entry.id} className="hover:bg-[#0E1520] transition-colors">
+                      <td className="py-2.5 px-2.5 font-bold text-white">{entry.citizenName}</td>
+                      <td className="py-2.5 px-2.5 font-mono text-slate-400">{entry.date}</td>
+                      <td className="py-2.5 px-2.5 text-right font-mono font-bold text-slate-200">
                         ${entry.amount.toLocaleString('ru-RU')}
                       </td>
-                      <td className="py-2 px-2 text-right font-mono font-bold text-emerald-400">
+                      <td className="py-2.5 px-2.5 text-right font-mono font-bold text-cyan-300">
                         ${Math.round(entry.amount * 0.8).toLocaleString('ru-RU')}
                       </td>
-                      <td className="py-2 px-2 text-right">
+                      <td className="py-2.5 px-2.5 text-right">
                         <button
                           type="button"
                           onClick={() => handleRemoveTreasuryEntry(entry.id)}
-                          className="p-1 rounded text-zinc-400 hover:text-rose-400 cursor-pointer"
+                          className="p-1 rounded text-slate-500 hover:text-rose-400 cursor-pointer"
                           title="Удалить запись"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1465,7 +1504,7 @@ export default function PardonCalculatorView() {
         </div>
       )}
 
-      {/* SETTINGS MODAL */}
+      {/* SETTINGS MODAL - ZERO BLUR */}
       <AnimatePresence>
         {isSettingsOpen && (
           <div className="fixed inset-0 z-[99990] flex items-center justify-center p-4">
@@ -1473,23 +1512,25 @@ export default function PardonCalculatorView() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
               onClick={() => setIsSettingsOpen(false)}
-              className="fixed inset-0 bg-black/90 backdrop-blur-sm"
+              className="fixed inset-0 bg-[#040608]/85"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-lg bg-[#0A0A0C] border border-zinc-800 rounded-xl p-4 space-y-3 z-10"
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.12 }}
+              className="relative w-full max-w-lg bg-[#0B0F15] border border-[#1E293B] rounded-xl p-5 space-y-3.5 z-10 shadow-2xl"
             >
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+              <div className="flex items-center justify-between border-b border-[#1C2736] pb-2.5">
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
+                  <SlidersHorizontal className="w-4 h-4 text-cyan-400" />
                   <h3 className="text-xs font-bold text-white uppercase tracking-wider">Настройки сервиса</h3>
                 </div>
                 <button
                   onClick={() => setIsSettingsOpen(false)}
-                  className="text-zinc-400 hover:text-white cursor-pointer p-1"
+                  className="text-slate-400 hover:text-white cursor-pointer p-1"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1497,7 +1538,7 @@ export default function PardonCalculatorView() {
 
               <div className="space-y-3 text-xs">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-zinc-300 block">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                     Groq Cloud API Key (Llama 3.2 Vision)
                   </label>
                   <div className="relative">
@@ -1509,12 +1550,12 @@ export default function PardonCalculatorView() {
                         setApiKey(e.target.value);
                         try { localStorage.setItem('groq_api_key', e.target.value.trim()); } catch (err) {}
                       }}
-                      className="w-full dark-input px-3 py-1.5 font-mono text-zinc-200 pr-8 text-xs"
+                      className="w-full dark-input px-3 py-1.5 font-mono text-slate-200 pr-8 text-xs"
                     />
                     <button
                       type="button"
                       onClick={() => setShowApiKey(!showApiKey)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
                     >
                       {showApiKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
@@ -1522,14 +1563,14 @@ export default function PardonCalculatorView() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-zinc-300 block">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                     Сырой текст для ручного разбора
                   </label>
                   <textarea
                     rows={4}
                     value={manualText}
                     onChange={e => setManualText(e.target.value)}
-                    className="w-full dark-input p-2.5 font-mono text-xs text-zinc-300 resize-none"
+                    className="w-full dark-input p-2.5 font-mono text-xs text-slate-300 resize-none"
                     placeholder="Вставьте сырой текст базы данных..."
                   />
                   <button
@@ -1538,7 +1579,7 @@ export default function PardonCalculatorView() {
                       parseTextToRows(manualText);
                       setIsSettingsOpen(false);
                     }}
-                    className="btn-dark-accent w-full py-1.5 rounded-md font-medium cursor-pointer mt-1 text-xs"
+                    className="btn-cyan-subtle w-full py-1.5 rounded-md font-bold cursor-pointer mt-1 text-xs"
                   >
                     Разобрать текст
                   </button>

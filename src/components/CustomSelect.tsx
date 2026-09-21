@@ -25,12 +25,12 @@ interface CustomSelectProps<T extends string | number = string> {
   label?: string;
 }
 
-const SEVERITY_COLORS: Record<string, { dot: string; text: string }> = {
-  admin: { dot: 'bg-zinc-400', text: 'text-zinc-300' },
-  small: { dot: 'bg-emerald-400', text: 'text-emerald-300' },
-  medium: { dot: 'bg-amber-400', text: 'text-amber-300' },
-  heavy: { dot: 'bg-orange-400', text: 'text-orange-300' },
-  especially: { dot: 'bg-rose-400', text: 'text-rose-300' }
+const SEVERITY_COLORS: Record<string, { dot: string; text: string; bg: string }> = {
+  admin: { dot: 'bg-slate-400', text: 'text-slate-300', bg: 'bg-slate-500/10' },
+  small: { dot: 'bg-teal-400', text: 'text-teal-300', bg: 'bg-teal-500/10' },
+  medium: { dot: 'bg-amber-400', text: 'text-amber-300', bg: 'bg-amber-500/10' },
+  heavy: { dot: 'bg-orange-400', text: 'text-orange-300', bg: 'bg-orange-500/10' },
+  especially: { dot: 'bg-rose-400', text: 'text-rose-300', bg: 'bg-rose-500/10' }
 };
 
 export function CustomSelect<T extends string | number = string>({
@@ -122,7 +122,7 @@ export function CustomSelect<T extends string | number = string>({
   return (
     <div className={`relative inline-block w-full ${className}`}>
       {label && (
-        <label className="text-[11px] font-bold text-zinc-400 block mb-1 uppercase tracking-wider">
+        <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
           {label}
         </label>
       )}
@@ -133,9 +133,9 @@ export function CustomSelect<T extends string | number = string>({
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-2 dark-input text-zinc-100 transition-all duration-100 cursor-pointer ${
+        className={`w-full flex items-center justify-between gap-2 dark-input text-slate-100 transition-all duration-100 cursor-pointer ${
           sizeClasses[size]
-        } ${isOpen ? 'border-emerald-500 ring-1 ring-emerald-500/30 bg-[#0C0C0F]' : ''} ${
+        } ${isOpen ? 'border-cyan-500 ring-1 ring-cyan-500/40 bg-[#0E1520]' : ''} ${
           disabled ? 'opacity-40 cursor-not-allowed' : ''
         } ${buttonClassName}`}
       >
@@ -143,14 +143,14 @@ export function CustomSelect<T extends string | number = string>({
           {colorStyle && (
             <span className={`w-2 h-2 rounded-full shrink-0 ${colorStyle.dot}`} />
           )}
-          <span className={selectedOption && selectedOption.value ? (colorStyle ? colorStyle.text : 'text-zinc-100 font-semibold') : 'text-zinc-500'}>
+          <span className={selectedOption && selectedOption.value ? (colorStyle ? colorStyle.text : 'text-slate-100 font-semibold') : 'text-slate-500'}>
             {selectedOption && selectedOption.value ? selectedOption.label : placeholder}
           </span>
         </span>
 
         <ChevronDown
-          className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-100 ${
-            isOpen ? 'rotate-180 text-white' : ''
+          className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-100 ${
+            isOpen ? 'rotate-180 text-cyan-400' : ''
           }`}
         />
       </button>
@@ -160,9 +160,9 @@ export function CustomSelect<T extends string | number = string>({
         <AnimatePresence>
           <motion.div
             ref={dropdownRef}
-            initial={{ opacity: 0, y: coords.placeAbove ? 4 : -4 }}
+            initial={{ opacity: 0, y: coords.placeAbove ? 3 : -3 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: coords.placeAbove ? 4 : -4 }}
+            exit={{ opacity: 0, y: coords.placeAbove ? 3 : -3 }}
             transition={{ duration: 0.1, ease: 'easeOut' }}
             style={{
               position: 'fixed',
@@ -172,10 +172,10 @@ export function CustomSelect<T extends string | number = string>({
               width: `${coords.width}px`,
               zIndex: 999999,
             }}
-            className={`max-h-64 overflow-y-auto bg-[#0A0A0D] border border-zinc-800 rounded-xl shadow-2xl shadow-black p-1 space-y-0.5 ${dropdownClassName}`}
+            className={`max-h-64 overflow-y-auto bg-[#0B0F15] border border-[#1E293B] rounded-xl shadow-2xl shadow-black p-1 space-y-0.5 ${dropdownClassName}`}
           >
             {options.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-zinc-500 italic text-center">
+              <div className="px-3 py-2 text-xs text-slate-500 italic text-center">
                 Нет вариантов
               </div>
             ) : (
@@ -192,22 +192,22 @@ export function CustomSelect<T extends string | number = string>({
                     onClick={() => handleSelect(option.value, isDisabled)}
                     className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-left transition-all rounded-lg cursor-pointer ${
                       isSelected
-                        ? 'bg-zinc-800/90 border border-zinc-700 text-white font-bold'
-                        : 'text-zinc-300 hover:bg-zinc-900 hover:text-white'
+                        ? 'bg-[#121B27] border border-cyan-500/30 text-white font-bold'
+                        : 'text-slate-300 hover:bg-[#121B27] hover:text-white'
                     } ${isDisabled ? 'opacity-30 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center gap-2 truncate">
                       {optColor ? (
                         <span className={`w-2 h-2 rounded-full shrink-0 ${optColor.dot}`} />
                       ) : (
-                        <span className="w-2 h-2 rounded-full shrink-0 bg-zinc-600" />
+                        <span className="w-2 h-2 rounded-full shrink-0 bg-slate-600" />
                       )}
                       <span className={`truncate font-medium ${optColor ? optColor.text : ''}`}>
                         {option.label}
                       </span>
                     </div>
 
-                    {isSelected && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 ml-2" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-cyan-400 shrink-0 ml-2" />}
                   </button>
                 );
               })
