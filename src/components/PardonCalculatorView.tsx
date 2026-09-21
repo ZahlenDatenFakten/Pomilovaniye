@@ -32,7 +32,11 @@ import {
   Landmark,
   User,
   Hash,
-  ArrowRight,
+  Search,
+  BookOpen,
+  HelpCircle,
+  Award,
+  ChevronRight,
   ExternalLink
 } from 'lucide-react';
 
@@ -76,6 +80,16 @@ interface TextCopyModalState {
   isOpen: boolean;
   title: string;
   text: string;
+}
+
+interface CatalogArticle {
+  code: string;
+  title: string;
+  category: 'all' | 'weapons' | 'state' | 'person' | 'property' | 'drugs' | 'special';
+  categoryLabel: string;
+  tyazhest: string;
+  price: number;
+  wait: boolean;
 }
 
 const PRICES: Record<string, number> = {
@@ -141,6 +155,30 @@ const QUICK_ARTICLES = [
   { code: 'побег из тюрьмы', label: 'Побег', ty: 'medium' }
 ];
 
+const CATALOG_ARTICLES: CatalogArticle[] = [
+  { code: '12.8', title: 'Незаконный оборот / ношение оружия', category: 'weapons', categoryLabel: 'Оружие', tyazhest: 'medium', price: 60000, wait: true },
+  { code: '12.7', title: 'Ношение спецсредств без лицензии', category: 'weapons', categoryLabel: 'Оружие', tyazhest: 'heavy', price: 80000, wait: true },
+  { code: '12.9', title: 'Хищение оружия или боеприпасов', category: 'weapons', categoryLabel: 'Оружие', tyazhest: 'heavy', price: 80000, wait: true },
+  { code: '17.1', title: 'Посягательство на жизнь сотрудника', category: 'state', categoryLabel: 'Власть и порядок', tyazhest: 'especially', price: 120000, wait: true },
+  { code: '17.6', title: 'Неподчинение законному требованию', category: 'state', categoryLabel: 'Власть и порядок', tyazhest: 'medium', price: 60000, wait: true },
+  { code: '17.5', title: 'Самоуправство', category: 'state', categoryLabel: 'Власть и порядок', tyazhest: 'medium', price: 60000, wait: true },
+  { code: '17.3', title: 'Оскорбление представителя власти', category: 'state', categoryLabel: 'Власть и порядок', tyazhest: 'small', price: 15000, wait: false },
+  { code: '15.6', title: 'Халатность должностного лица', category: 'state', categoryLabel: 'Власть и порядок', tyazhest: 'medium', price: 60000, wait: true },
+  { code: '15.1', title: 'Превышение должностных полномочий', category: 'state', categoryLabel: 'Власть и порядок', tyazhest: 'heavy', price: 80000, wait: true },
+  { code: '15.4', title: 'Получение взятки', category: 'state', categoryLabel: 'Власть и порядок', tyazhest: 'medium', price: 60000, wait: true },
+  { code: '10.8', title: 'Неправомерное завладение ТС (Угон)', category: 'property', categoryLabel: 'Имущество', tyazhest: 'heavy', price: 80000, wait: true },
+  { code: '10.4', title: 'Грабеж / разбойное нападение', category: 'property', categoryLabel: 'Имущество', tyazhest: 'heavy', price: 80000, wait: true },
+  { code: '10.2', title: 'Кража чужого имущества', category: 'property', categoryLabel: 'Имущество', tyazhest: 'medium', price: 60000, wait: true },
+  { code: '6.6', title: 'Убийство человека', category: 'person', categoryLabel: 'Личность', tyazhest: 'especially', price: 120000, wait: true },
+  { code: '6.8', title: 'Умышленное причинение тяжкого вреда', category: 'person', categoryLabel: 'Личность', tyazhest: 'medium', price: 60000, wait: true },
+  { code: '6.1', title: 'Угроза убийством или расправой', category: 'person', categoryLabel: 'Личность', tyazhest: 'medium', price: 60000, wait: true },
+  { code: '13.1', title: 'Приобретение / хранение наркотиков', category: 'drugs', categoryLabel: 'Наркотики', tyazhest: 'small', price: 15000, wait: false },
+  { code: '13.2', title: 'Сбыт наркотических веществ', category: 'drugs', categoryLabel: 'Наркотики', tyazhest: 'medium', price: 60000, wait: true },
+  { code: '16.14', title: 'Побег из места лишения свободы', category: 'special', categoryLabel: 'Особые', tyazhest: 'especially', price: 120000, wait: true },
+  { code: 'чистосердечное признание', title: 'Чистосердечное признание (явка с повинной)', category: 'special', categoryLabel: 'Особые', tyazhest: 'small', price: 15000, wait: false },
+  { code: 'побег из тюрьмы', title: 'Побег из федеральной тюрьмы', category: 'special', categoryLabel: 'Особые', tyazhest: 'medium', price: 60000, wait: true }
+];
+
 export default function PardonCalculatorView() {
   const [mainTab, setMainTab] = useState<'calculator' | 'treasury'>('calculator');
 
@@ -171,6 +209,10 @@ export default function PardonCalculatorView() {
     'чистосердечное признание': 'small',
     'побег из тюрьмы': 'medium'
   });
+
+  // Catalog Filters
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogCategory, setCatalogCategory] = useState<string>('all');
 
   // Treasury Log
   const [treasuryEntries, setTreasuryEntries] = useState<TreasuryEntry[]>(() => {
@@ -212,6 +254,19 @@ export default function PardonCalculatorView() {
   const [confirmModal, setConfirmModal] = useState<ConfirmModalState | null>(null);
   const [textCopyModal, setTextCopyModal] = useState<TextCopyModalState | null>(null);
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
+
+  // Live State Clock
+  const [currentTimeStr, setCurrentTimeStr] = useState('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTimeStr(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tesseractWorkerRef = useRef<any>(null);
@@ -527,6 +582,19 @@ export default function PardonCalculatorView() {
     setRowSeq(rowSeq + 1);
   };
 
+  const handleAddFromCatalog = (cat: CatalogArticle) => {
+    const now = new Date();
+    setRows(prev => [...prev, {
+      id: `r-${rowSeq}`,
+      code: SPECIAL_ENTRIES[cat.code]?.display || cat.code,
+      date: `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`,
+      time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+      tyazhest: cat.tyazhest
+    }]);
+    setRowSeq(rowSeq + 1);
+    notifyToast(`Статья ${cat.code} добавлена в досье`, 'success');
+  };
+
   const handleRemoveRow = (id: string) => {
     const target = rows.find(r => r.id === id);
     if (!target) return;
@@ -665,6 +733,10 @@ export default function PardonCalculatorView() {
     return Math.round(totalTreasuryAll * 0.80);
   }, [totalTreasuryAll]);
 
+  const officerProfit20 = useMemo(() => {
+    return totalTreasuryAll - treasuryAmount80;
+  }, [totalTreasuryAll, treasuryAmount80]);
+
   const treasuryDateString = useMemo(() => {
     const dates = Array.from(new Set(treasuryEntries.map(e => e.date))).sort();
     return dates.length > 0 ? `${dates[0]} - ${dates[dates.length - 1]}` : '';
@@ -673,6 +745,16 @@ export default function PardonCalculatorView() {
   const treasuryReportText = useMemo(() => {
     return `Помилований на ${totalTreasuryAll.toLocaleString('ru-RU').replace(/\s/g, '.')}$ | ${treasuryDateString}\nНа казне ${treasuryAmount80.toLocaleString('ru-RU').replace(/\s/g, '.')}$`;
   }, [totalTreasuryAll, treasuryDateString, treasuryAmount80]);
+
+  // Filtered Catalog
+  const filteredCatalog = useMemo(() => {
+    return CATALOG_ARTICLES.filter(art => {
+      const matchesCat = catalogCategory === 'all' || art.category === catalogCategory;
+      const searchNorm = catalogSearch.toLowerCase().trim();
+      const matchesSearch = !searchNorm || art.code.toLowerCase().includes(searchNorm) || art.title.toLowerCase().includes(searchNorm);
+      return matchesCat && matchesSearch;
+    });
+  }, [catalogCategory, catalogSearch]);
 
   // Main Action: Copy report & record into treasury
   const handleCopyReportAndRecord = async () => {
@@ -759,7 +841,7 @@ export default function PardonCalculatorView() {
   };
 
   return (
-    <div className="w-full space-y-3.5">
+    <div className="w-full space-y-3.5 pb-8">
       {/* GLOBAL DRAG OVERLAY - ZERO BLUR */}
       <AnimatePresence>
         {isGlobalDragging && (
@@ -921,8 +1003,14 @@ export default function PardonCalculatorView() {
           </button>
         </nav>
 
-        {/* Quick Utility Actions */}
-        <div className="flex items-center gap-2">
+        {/* Quick Utility Actions & State Clock */}
+        <div className="flex items-center gap-2.5">
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#070A0F] border border-[#1C2736] text-[11px] font-mono text-slate-300">
+            <Clock className="w-3 h-3 text-cyan-400" />
+            <span>Штат:</span>
+            <span className="text-white font-bold">{currentTimeStr || '--:--:--'}</span>
+          </div>
+
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
@@ -945,12 +1033,67 @@ export default function PardonCalculatorView() {
         </div>
       </header>
 
+      {/* QUICK STATS HUD BANNER - EXPANSIVE & PROFESSIONAL */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+        <div className="dark-panel p-2.5 flex items-center justify-between border-[#1C2736]">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded bg-[#101722] border border-cyan-500/25 flex items-center justify-center text-cyan-400">
+              <User className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 font-medium block">Оформлено за смену</span>
+              <span className="text-sm font-bold font-mono text-white tabular-nums">{treasuryEntries.length} чел.</span>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono text-slate-500">смена</span>
+        </div>
+
+        <div className="dark-panel p-2.5 flex items-center justify-between border-[#1C2736]">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded bg-[#101722] border border-teal-500/25 flex items-center justify-center text-teal-400">
+              <DollarSign className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 font-medium block">Всего пошлин за смену</span>
+              <span className="text-sm font-bold font-mono text-white tabular-nums">${totalTreasuryAll.toLocaleString('ru-RU')}</span>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono text-slate-500">100%</span>
+        </div>
+
+        <div className="dark-panel p-2.5 flex items-center justify-between border-[#1C2736]">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded bg-[#101722] border border-cyan-500/25 flex items-center justify-center text-cyan-300">
+              <Building2 className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 font-medium block">В казну штата</span>
+              <span className="text-sm font-bold font-mono text-cyan-300 tabular-nums">${treasuryAmount80.toLocaleString('ru-RU')}</span>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono text-cyan-400 font-bold">80%</span>
+        </div>
+
+        <div className="dark-panel p-2.5 flex items-center justify-between border-[#1C2736]">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded bg-[#101722] border border-teal-500/25 flex items-center justify-center text-teal-300">
+              <Award className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 font-medium block">Доход сотрудника</span>
+              <span className="text-sm font-bold font-mono text-teal-300 tabular-nums">${officerProfit20.toLocaleString('ru-RU')}</span>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono text-teal-400 font-bold">20%</span>
+        </div>
+      </div>
+
       {/* TAB 1: COCKPIT CALCULATOR WORKSPACE */}
       {mainTab === 'calculator' && (
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-3.5 items-start">
           
-          {/* LEFT SIDE (7 COLS): DOSSIER + SMART SCAN + ARTICLES MATRIX */}
-          <div className="xl:col-span-7 space-y-3.5">
+          {/* LEFT SIDE (8 COLS): DOSSIER + SMART SCAN + ARTICLES MATRIX + DIRECTORY */}
+          <div className="xl:col-span-8 space-y-3.5">
             
             {/* DOSSIER & SCAN MODULE */}
             <section className="dark-panel p-4 space-y-3 border-[#1C2736]">
@@ -1118,7 +1261,7 @@ export default function PardonCalculatorView() {
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-teal-400"></div>
                   <h2 className="text-xs font-bold text-white uppercase tracking-wider">
-                    Статьи и судимости
+                    Статьи и судимости в досье
                   </h2>
                   <span className="px-1.5 py-0.2 rounded-full bg-[#101722] border border-[#1C2736] text-[10px] font-mono font-bold text-cyan-300">
                     {rowCalculations.length}
@@ -1131,7 +1274,7 @@ export default function PardonCalculatorView() {
                   className="btn-cyan-subtle flex items-center gap-1 px-2.5 py-1 text-xs font-bold cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Добавить статью</span>
+                  <span>Добавить пустую строку</span>
                 </button>
               </div>
 
@@ -1168,11 +1311,11 @@ export default function PardonCalculatorView() {
                   <tbody className="divide-y divide-[#16202E]">
                     {rowCalculations.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
-                          <FileSearch className="w-7 h-7 mx-auto text-slate-500 mb-1.5" />
+                        <td colSpan={7} className="py-7 text-center text-slate-400 text-xs">
+                          <FileSearch className="w-6 h-6 mx-auto text-slate-500 mb-1.5" />
                           <p className="text-slate-300 font-bold">Статьи ещё не добавлены</p>
                           <p className="text-[11px] text-slate-500 mt-0.5">
-                            Воспользуйтесь быстрыми кнопками вверху или вставьте скриншот (Ctrl+V)
+                            Воспользуйтесь быстрыми кнопками вверху, каталогом ниже или вставьте скриншот (Ctrl+V)
                           </p>
                         </td>
                       </tr>
@@ -1252,17 +1395,133 @@ export default function PardonCalculatorView() {
                 </table>
               </div>
             </section>
+
+            {/* EXPANSIVE INTERACTIVE CRIMINAL CODE DIRECTORY */}
+            <section className="dark-panel p-4 space-y-3.5 border-[#1C2736]">
+              <div className="flex flex-wrap items-center justify-between border-b border-[#1C2736] pb-2.5 gap-2">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-cyan-400" />
+                  <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Интерактивный справочник статей Уголовного Кодекса
+                  </h2>
+                  <span className="text-[10px] font-mono text-slate-400 bg-[#0E1520] px-2 py-0.5 rounded border border-[#1C2736]">
+                    1 клик для добавления
+                  </span>
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Поиск по статье или названию..."
+                    value={catalogSearch}
+                    onChange={e => setCatalogSearch(e.target.value)}
+                    className="w-full dark-input pl-8 pr-3 py-1.5 text-xs text-white"
+                  />
+                  {catalogSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setCatalogSearch('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Category Filter Pills */}
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                {[
+                  { id: 'all', label: 'Все статьи' },
+                  { id: 'weapons', label: 'Оружие' },
+                  { id: 'state', label: 'Власть и служба' },
+                  { id: 'person', label: 'Против личности' },
+                  { id: 'property', label: 'Угон и имущество' },
+                  { id: 'drugs', label: 'Наркотики' },
+                  { id: 'special', label: 'Особые условия' },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setCatalogCategory(tab.id)}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                      catalogCategory === tab.id
+                        ? 'bg-[#15202E] text-cyan-300 border border-cyan-500/40'
+                        : 'bg-[#0A0E15] text-slate-400 hover:text-slate-200 border border-[#1C2736]'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Articles Grid in Catalog */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[360px] overflow-y-auto pr-1">
+                {filteredCatalog.map(art => {
+                  const sevStyle = {
+                    admin: { border: 'border-slate-500/25', text: 'text-slate-300', bg: 'bg-slate-500/10' },
+                    small: { border: 'border-teal-500/25', text: 'text-teal-300', bg: 'bg-teal-500/10' },
+                    medium: { border: 'border-amber-500/25', text: 'text-amber-300', bg: 'bg-amber-500/10' },
+                    heavy: { border: 'border-orange-500/25', text: 'text-orange-300', bg: 'bg-orange-500/10' },
+                    especially: { border: 'border-rose-500/25', text: 'text-rose-300', bg: 'bg-rose-500/10' }
+                  }[art.tyazhest] || { border: 'border-slate-500/25', text: 'text-slate-300', bg: 'bg-slate-500/10' };
+
+                  return (
+                    <div
+                      key={art.code}
+                      className="p-2.5 rounded-lg bg-[#070A0F] border border-[#1C2736] hover:border-cyan-500/40 transition-colors flex items-center justify-between gap-2.5 group"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="font-mono font-bold text-xs text-white group-hover:text-cyan-300 transition-colors">
+                            {art.code}
+                          </span>
+                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border ${sevStyle.bg} ${sevStyle.border} ${sevStyle.text}`}>
+                            ${(art.price / 1000)}k
+                          </span>
+                          {art.wait ? (
+                            <span className="text-[9px] font-mono text-amber-400 bg-amber-500/10 px-1 rounded border border-amber-500/20">
+                              КД 24ч
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-mono text-teal-400 bg-teal-500/10 px-1 rounded border border-teal-500/20">
+                              Без КД
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-300 truncate">
+                          {art.title}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAddFromCatalog(art)}
+                        className="px-2 py-1 rounded bg-[#0E1520] hover:bg-cyan-500 hover:text-black text-cyan-400 text-[11px] font-bold border border-cyan-500/30 hover:border-cyan-400 transition-all shrink-0 cursor-pointer flex items-center gap-1"
+                        title="Добавить эту статью в досье"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Добавить</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           </div>
 
-          {/* RIGHT SIDE (5 COLS): STICKY FINANCIAL COMMAND HUB - ALWAYS IN VIEW! */}
-          <div className="xl:col-span-5 space-y-3.5 xl:sticky xl:top-4">
+          {/* RIGHT SIDE (4 COLS): STICKY FINANCIAL COCKPIT + RECENT LOG + LEGAL NOTES */}
+          <div className="xl:col-span-4 space-y-3.5 xl:sticky xl:top-4">
             
+            {/* PRIMARY FINANCIAL HUB */}
             <section className="dark-panel-hero p-4 space-y-3.5">
               <div className="flex items-center justify-between border-b border-[#1C2736] pb-2">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
                   <h2 className="text-xs font-bold text-white uppercase tracking-wider">
-                    Финансовый командный центр
+                    Финансовый расчёт
                   </h2>
                 </div>
                 <span className="text-[10px] font-mono font-bold text-cyan-300 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/25">
@@ -1362,6 +1621,75 @@ export default function PardonCalculatorView() {
                 </div>
                 <div className="dark-terminal p-3 rounded-lg font-mono text-[11px] text-slate-300 whitespace-pre-line leading-relaxed select-all border-[#1C2736]">
                   {reportText}
+                </div>
+              </div>
+            </section>
+
+            {/* RECENT SHIFT ENTRIES MODULE */}
+            <section className="dark-panel p-3.5 space-y-2.5 border-[#1C2736]">
+              <div className="flex items-center justify-between border-b border-[#1C2736] pb-2">
+                <div className="flex items-center gap-1.5">
+                  <History className="w-3.5 h-3.5 text-cyan-400" />
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Недавние помилования смены
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMainTab('treasury')}
+                  className="text-[10px] font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5 cursor-pointer"
+                >
+                  <span>Все ({treasuryEntries.length})</span>
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+
+              {treasuryEntries.length === 0 ? (
+                <div className="py-4 text-center text-slate-500 text-xs">
+                  Записей за текущую смену пока нет
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {treasuryEntries.slice(0, 4).map(entry => (
+                    <div
+                      key={entry.id}
+                      className="p-2 rounded bg-[#070A0F] border border-[#1C2736] flex items-center justify-between text-xs"
+                    >
+                      <div className="truncate">
+                        <span className="font-bold text-white block truncate">{entry.citizenName}</span>
+                        <span className="text-[10px] font-mono text-slate-400">{entry.date}</span>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="font-mono font-bold text-cyan-300 block">${entry.amount.toLocaleString('ru-RU')}</span>
+                        <span className="text-[9px] font-mono text-slate-500">В казну: ${Math.round(entry.amount * 0.8).toLocaleString('ru-RU')}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* LEGAL RULES MEMO */}
+            <section className="dark-panel p-3.5 space-y-2 border-[#1C2736] text-xs">
+              <div className="flex items-center gap-1.5 border-b border-[#1C2736] pb-1.5">
+                <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                  Памятка регламента SA-GOV
+                </h3>
+              </div>
+
+              <div className="space-y-1.5 text-[11px] text-slate-300 leading-normal">
+                <div className="flex items-start gap-1.5">
+                  <span className="text-cyan-400 font-bold">•</span>
+                  <span><strong>Лимит пошлины:</strong> максимум $170 000 в сутки на 1 гражданина.</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="text-cyan-400 font-bold">•</span>
+                  <span><strong>Правило 24 часов:</strong> средние, тяжкие и особо тяжкие статьи требуют выдержки 24ч с момента ареста.</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="text-cyan-400 font-bold">•</span>
+                  <span><strong>Сдача в казну:</strong> 80% сдается на баланс Правительства, 20% — премия сотрудника.</span>
                 </div>
               </div>
             </section>
