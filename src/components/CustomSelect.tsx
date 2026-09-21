@@ -58,12 +58,12 @@ export function CustomSelect<T extends string | number = string>({
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
-      const placeAbove = spaceBelow < 240 && rect.top > 240;
+      const placeAbove = spaceBelow < 260 && rect.top > 260;
 
       setCoords({
         top: placeAbove ? rect.top : rect.bottom,
         left: rect.left,
-        width: Math.max(rect.width, 180),
+        width: Math.max(rect.width, 210),
         placeAbove
       });
     }
@@ -113,16 +113,17 @@ export function CustomSelect<T extends string | number = string>({
     setIsOpen(false);
   };
 
+  // Spacious, comfortable heights and font sizes for great readability
   const sizeClasses = {
-    sm: 'px-2.5 py-1 text-xs font-semibold rounded-md min-h-[30px]',
-    md: 'px-3 py-1.5 text-sm font-semibold rounded-lg min-h-[36px]',
-    lg: 'px-4 py-2 text-sm font-bold rounded-lg min-h-[42px]'
+    sm: 'px-3 py-2 text-sm font-semibold rounded-lg min-h-[38px]',
+    md: 'px-3.5 py-2.5 text-sm sm:text-base font-semibold rounded-lg min-h-[44px]',
+    lg: 'px-4 py-3 text-base font-bold rounded-xl min-h-[50px]'
   };
 
   return (
     <div className={`relative inline-block w-full ${className}`}>
       {label && (
-        <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
+        <label className="text-xs font-bold text-slate-300 block mb-1.5 uppercase tracking-wider">
           {label}
         </label>
       )}
@@ -133,15 +134,15 @@ export function CustomSelect<T extends string | number = string>({
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-2 dark-input text-slate-100 transition-all duration-100 cursor-pointer ${
+        className={`w-full flex items-center justify-between gap-2.5 dark-input text-slate-100 transition-all duration-100 cursor-pointer ${
           sizeClasses[size]
         } ${isOpen ? 'border-cyan-500 ring-1 ring-cyan-500/40 bg-[#0E1520]' : ''} ${
           disabled ? 'opacity-40 cursor-not-allowed' : ''
         } ${buttonClassName}`}
       >
-        <span className="truncate flex items-center gap-1.5">
+        <span className="truncate flex items-center gap-2">
           {colorStyle && (
-            <span className={`w-2 h-2 rounded-full shrink-0 ${colorStyle.dot}`} />
+            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${colorStyle.dot}`} />
           )}
           <span className={selectedOption && selectedOption.value ? (colorStyle ? colorStyle.text : 'text-slate-100 font-semibold') : 'text-slate-500'}>
             {selectedOption && selectedOption.value ? selectedOption.label : placeholder}
@@ -149,7 +150,7 @@ export function CustomSelect<T extends string | number = string>({
         </span>
 
         <ChevronDown
-          className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-100 ${
+          className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-100 ${
             isOpen ? 'rotate-180 text-cyan-400' : ''
           }`}
         />
@@ -172,10 +173,10 @@ export function CustomSelect<T extends string | number = string>({
               width: `${coords.width}px`,
               zIndex: 999999,
             }}
-            className={`max-h-64 overflow-y-auto bg-[#0B0F15] border border-[#1E293B] rounded-xl shadow-2xl shadow-black p-1 space-y-0.5 ${dropdownClassName}`}
+            className={`max-h-72 overflow-y-auto bg-[#0B0F15] border border-[#1E293B] rounded-xl shadow-2xl shadow-black p-1.5 space-y-1 ${dropdownClassName}`}
           >
             {options.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-slate-500 italic text-center">
+              <div className="px-3.5 py-2.5 text-sm text-slate-500 italic text-center">
                 Нет вариантов
               </div>
             ) : (
@@ -190,24 +191,24 @@ export function CustomSelect<T extends string | number = string>({
                     type="button"
                     disabled={isDisabled}
                     onClick={() => handleSelect(option.value, isDisabled)}
-                    className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-left transition-all rounded-lg cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left transition-all rounded-lg cursor-pointer ${
                       isSelected
                         ? 'bg-[#121B27] border border-cyan-500/30 text-white font-bold'
                         : 'text-slate-300 hover:bg-[#121B27] hover:text-white'
                     } ${isDisabled ? 'opacity-30 cursor-not-allowed' : ''}`}
                   >
-                    <div className="flex items-center gap-2 truncate">
+                    <div className="flex items-center gap-2.5 truncate">
                       {optColor ? (
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${optColor.dot}`} />
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${optColor.dot}`} />
                       ) : (
-                        <span className="w-2 h-2 rounded-full shrink-0 bg-slate-600" />
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-slate-600" />
                       )}
                       <span className={`truncate font-medium ${optColor ? optColor.text : ''}`}>
                         {option.label}
                       </span>
                     </div>
 
-                    {isSelected && <Check className="w-3.5 h-3.5 text-cyan-400 shrink-0 ml-2" />}
+                    {isSelected && <Check className="w-4 h-4 text-cyan-400 shrink-0 ml-2" />}
                   </button>
                 );
               })
