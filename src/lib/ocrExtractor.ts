@@ -517,14 +517,31 @@ export function normalizeDate(rawDateStr: string): string {
   if (!rawDateStr) return '';
   const clean = rawDateStr.replace(/[^\d.]/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$/g, '');
   const parts = clean.split('.');
-  const currentYear = new Date().getFullYear().toString();
+  const now = new Date();
+  const currentYear = now.getFullYear();
 
   if (parts.length >= 2) {
     const day = parts[0].padStart(2, '0');
     const month = parts[1].padStart(2, '0');
-    let year = parts[2] || currentYear;
-    if (year.length < 4) {
-      year = currentYear;
+    let year = currentYear;
+
+    if (parts.length >= 3 && parts[2]) {
+      const yStr = parts[2];
+      if (yStr.length === 2) {
+        year = 2000 + parseInt(yStr, 10);
+      } else if (yStr.length === 4) {
+        year = parseInt(yStr, 10);
+      }
+    } else {
+      // If no year was provided (e.g. 21.12), check if it would fall in the future this year
+      const dNum = parseInt(day, 10);
+      const mNum = parseInt(month, 10);
+      const testDate = new Date(currentYear, mNum - 1, dNum, 23, 59, 59);
+      if (testDate.getTime() > now.getTime()) {
+        year = currentYear - 1;
+      } else {
+        year = currentYear;
+      }
     }
     return `${day}.${month}.${year}`;
   }
