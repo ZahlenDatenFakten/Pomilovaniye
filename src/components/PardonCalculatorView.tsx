@@ -201,6 +201,7 @@ export default function PardonCalculatorView() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [manualText, setManualText] = useState('');
   const [copiedReport, setCopiedReport] = useState(false);
+  const [showReportBox, setShowReportBox] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // In-app Notifications & Dialogs
@@ -722,6 +723,10 @@ export default function PardonCalculatorView() {
     return Math.round(totalTreasuryAll * 0.80);
   }, [totalTreasuryAll]);
 
+  const treasuryAmount20 = useMemo(() => {
+    return Math.round(totalTreasuryAll * 0.20);
+  }, [totalTreasuryAll]);
+
   const treasuryDateString = useMemo(() => {
     const dates = Array.from(new Set(treasuryEntries.map(e => e.date))).sort();
     return dates.length > 0 ? `${dates[0]} - ${dates[dates.length - 1]}` : '';
@@ -923,17 +928,17 @@ export default function PardonCalculatorView() {
         )}
       </AnimatePresence>
 
-      {/* EXPANSIVE & COMFORTABLE HEADER */}
-      <header className="dark-panel px-5 py-3.5 flex flex-wrap items-center justify-between gap-4 border-[#1C2736]">
+      {/* EXECUTIVE COCKPIT HEADER (BALANCED & SLEEK) */}
+      <header className="dark-panel px-4 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-3 border-[#1C2736]">
         {/* Brand identity */}
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-[#101722] border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-sm">
-            <Scale className="w-5 h-5" />
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#101722] border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-sm">
+            <Scale className="w-4 h-4" />
           </div>
           <div>
-            <div className="flex items-center gap-2.5">
-              <span className="text-sm sm:text-base font-extrabold text-white tracking-tight uppercase">SA-GOV</span>
-              <span className="text-xs font-mono font-bold text-cyan-300 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/25">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-extrabold text-white tracking-tight uppercase">SA-GOV</span>
+              <span className="text-[11px] font-mono font-bold text-cyan-300 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/25">
                 PARDON REGISTRY
               </span>
             </div>
@@ -941,33 +946,33 @@ export default function PardonCalculatorView() {
         </div>
 
         {/* Task navigation tabs */}
-        <nav className="flex items-center p-1 rounded-xl bg-[#070A0F] border border-[#1C2736] text-sm font-semibold">
+        <nav className="flex items-center p-1 rounded-xl bg-[#070A0F] border border-[#1C2736] text-xs sm:text-sm font-semibold">
           <button
             type="button"
             onClick={() => setMainTab('calculator')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
               mainTab === 'calculator'
                 ? 'bg-[#15202E] text-cyan-300 font-bold border border-cyan-500/30'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <FileText className="w-4 h-4 text-cyan-400" />
+            <FileText className="w-3.5 h-3.5 text-cyan-400" />
             <span>Оформление гражданина</span>
           </button>
 
           <button
             type="button"
             onClick={() => setMainTab('treasury')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
               mainTab === 'treasury'
                 ? 'bg-[#15202E] text-cyan-300 font-bold border border-cyan-500/30'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Landmark className="w-4 h-4 text-amber-400" />
+            <Landmark className="w-3.5 h-3.5 text-amber-400" />
             <span>Реестр казны</span>
             {treasuryEntries.length > 0 && (
-              <span className="ml-1 px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-mono font-bold">
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[11px] font-mono font-bold">
                 {treasuryEntries.length}
               </span>
             )}
@@ -975,100 +980,102 @@ export default function PardonCalculatorView() {
         </nav>
 
         {/* Quick Utility Actions */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
-            className="btn-dark-ghost flex items-center gap-2 px-3.5 py-2 text-sm font-semibold"
+            className="btn-dark-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold"
             title="Настройки сервиса (API Key / Распознавание)"
           >
-            <SlidersHorizontal className="w-4 h-4 text-cyan-400" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
             <span className="hidden sm:inline">Настройки</span>
           </button>
 
           <button
             type="button"
             onClick={handlePromptResetAll}
-            className="btn-dark-ghost flex items-center gap-2 px-3.5 py-2 text-sm font-semibold text-slate-400 hover:text-rose-400"
+            className="btn-dark-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-rose-400"
             title="Очистить форму"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Очистить форму</span>
           </button>
         </div>
       </header>
 
-      {/* TAB 1: COCKPIT CALCULATOR WORKSPACE (LARGE & COMFORTABLE) */}
+      {/* TAB 1: COCKPIT CALCULATOR WORKSPACE (GOLDEN MEAN LAYOUT) */}
       {mainTab === 'calculator' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <div className="space-y-4">
           
-          {/* LEFT SIDE (7 COLS): DOSSIER + ARTICLES TABLE */}
-          <div className="lg:col-span-7 space-y-4">
+          {/* TOP DECK: 2 BALANCED COMMAND CARDS (DOSSIER & FINANCIAL HUB) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
             
-            {/* DOSSIER & SCAN MODULE */}
-            <section className="dark-panel p-5 sm:p-6 space-y-4 border-[#1C2736]">
-              <div className="flex items-center justify-between border-b border-[#1C2736] pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-cyan-400"></div>
-                  <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
-                    Досье гражданина
-                  </h2>
-                </div>
-                <span className="text-xs text-slate-400 font-mono">
-                  Ctrl+V для быстрой вставки снимка
-                </span>
-              </div>
-
-              {/* Citizen Details Inputs */}
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
-                <div className="sm:col-span-5">
-                  <label className="text-xs font-bold text-slate-300 block mb-1.5 uppercase tracking-wider">
-                    Имя Фамилия
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Danek_Fillin"
-                    value={fio}
-                    onChange={e => setFio(e.target.value)}
-                    className="w-full dark-input px-3.5 py-2.5 text-sm sm:text-base font-semibold text-white"
-                  />
-                </div>
-
-                <div className="sm:col-span-4">
-                  <label className="text-xs font-bold text-slate-300 block mb-1.5 uppercase tracking-wider">
-                    Номер паспорта
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="601226"
-                    value={passport}
-                    onChange={e => setPassport(e.target.value)}
-                    className="w-full dark-input px-3.5 py-2.5 text-sm sm:text-base font-mono font-bold text-cyan-300"
-                  />
-                </div>
-
-                <div className="sm:col-span-3">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-bold text-slate-300 block uppercase tracking-wider">
-                      Суточный долг
-                    </label>
-                    <button
-                      type="button"
-                      onClick={handlePromptResetDailyDebt}
-                      className="text-xs font-mono font-bold text-cyan-400 hover:text-cyan-300 cursor-pointer"
-                      title="Сбросить долг в $0"
-                    >
-                      Сброс ($0)
-                    </button>
+            {/* CARD 1 (lg:col-span-7): DOSSIER & SCAN MODULE */}
+            <section className="lg:col-span-7 dark-panel p-4 sm:p-5 flex flex-col justify-between border-[#1C2736] space-y-3.5">
+              <div>
+                <div className="flex items-center justify-between border-b border-[#1C2736] pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
+                    <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+                      Досье гражданина
+                    </h2>
                   </div>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={previousDebt}
-                    onChange={e => setPreviousDebt(e.target.value)}
-                    className="w-full dark-input px-3.5 py-2.5 text-sm sm:text-base font-mono font-bold text-white"
-                  />
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    Ctrl+V для быстрой вставки снимка
+                  </span>
+                </div>
+
+                {/* Citizen Details Inputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-3">
+                  <div className="sm:col-span-5">
+                    <label className="text-[11px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
+                      Имя Фамилия
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Danek_Fillin"
+                      value={fio}
+                      onChange={e => setFio(e.target.value)}
+                      className="w-full dark-input px-3 py-2 text-sm font-semibold text-white"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-4">
+                    <label className="text-[11px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">
+                      Номер паспорта
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="601226"
+                      value={passport}
+                      onChange={e => setPassport(e.target.value)}
+                      className="w-full dark-input px-3 py-2 text-sm font-mono font-bold text-cyan-300"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-slate-400 block uppercase tracking-wider">
+                        Суточный долг
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handlePromptResetDailyDebt}
+                        className="text-[11px] font-mono font-bold text-cyan-400 hover:text-cyan-300 cursor-pointer"
+                        title="Сбросить долг в $0"
+                      >
+                        Сброс ($0)
+                      </button>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={previousDebt}
+                      onChange={e => setPreviousDebt(e.target.value)}
+                      className="w-full dark-input px-3 py-2 text-sm font-mono font-bold text-white"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1085,26 +1092,26 @@ export default function PardonCalculatorView() {
                 {!imagePreview ? (
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full p-4 rounded-xl border border-dashed border-[#1C2736] hover:border-cyan-500/50 bg-[#070A0F] flex items-center justify-between cursor-pointer transition-colors group"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-dashed border-[#1C2736] hover:border-cyan-500/50 bg-[#070A0F] flex items-center justify-between cursor-pointer transition-colors group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#101722] border border-[#1C2736] flex items-center justify-center text-slate-400 group-hover:text-cyan-400 transition-colors">
-                        <Upload className="w-4 h-4" />
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-[#101722] border border-[#1C2736] flex items-center justify-center text-slate-400 group-hover:text-cyan-400 transition-colors">
+                        <Upload className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-sm sm:text-base text-slate-300 group-hover:text-white transition-colors font-medium">
+                      <span className="text-xs sm:text-sm text-slate-300 group-hover:text-white transition-colors font-medium">
                         Загрузить или вставить скриншот базы данных (database.gov)
                       </span>
                     </div>
-                    <span className="text-xs font-mono text-cyan-400/80 px-2.5 py-1 rounded-md bg-[#0E1520] border border-[#1C2736]">
+                    <span className="text-[11px] font-mono text-cyan-400/80 px-2 py-0.5 rounded-md bg-[#0E1520] border border-[#1C2736]">
                       Ctrl+V
                     </span>
                   </div>
                 ) : (
-                  <div className="p-4 rounded-xl border border-cyan-500/30 bg-[#091018] space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="px-3.5 py-2.5 rounded-xl border border-cyan-500/30 bg-[#091018] space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
-                        <span className="text-sm font-bold text-cyan-300 truncate max-w-[280px]">
+                        <span className="text-xs font-bold text-cyan-300 truncate max-w-[220px]">
                           {uploadedFileName || 'Скриншот прикреплен'}
                         </span>
                         <button
@@ -1113,16 +1120,16 @@ export default function PardonCalculatorView() {
                           className="text-slate-400 hover:text-rose-400 p-1 cursor-pointer"
                           title="Удалить снимок"
                         >
-                          <X className="w-4 h-4" />
+                          <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex items-center p-0.5 rounded-lg bg-[#06080B] border border-[#1C2736] text-xs font-bold">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center p-0.5 rounded-lg bg-[#06080B] border border-[#1C2736] text-[11px] font-bold">
                           <button
                             type="button"
                             onClick={() => setCurrentMethod('tesseract')}
-                            className={`px-3 py-1 rounded-md cursor-pointer ${
+                            className={`px-2.5 py-1 rounded-md cursor-pointer ${
                               currentMethod === 'tesseract' ? 'bg-[#15202E] text-cyan-300 font-bold' : 'text-slate-400'
                             }`}
                           >
@@ -1131,7 +1138,7 @@ export default function PardonCalculatorView() {
                           <button
                             type="button"
                             onClick={() => setCurrentMethod('groq')}
-                            className={`px-3 py-1 rounded-md cursor-pointer flex items-center gap-1.5 ${
+                            className={`px-2.5 py-1 rounded-md cursor-pointer flex items-center gap-1 ${
                               currentMethod === 'groq' ? 'bg-[#15202E] text-cyan-300 font-bold' : 'text-slate-400'
                             }`}
                           >
@@ -1144,16 +1151,16 @@ export default function PardonCalculatorView() {
                           type="button"
                           onClick={handleAnalyzeImage}
                           disabled={isAnalyzing}
-                          className="btn-cyan-cta px-4 py-1.5 text-sm font-extrabold flex items-center gap-2 cursor-pointer"
+                          className="btn-cyan-cta px-3 py-1 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
                         >
-                          {isAnalyzing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                          {isAnalyzing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
                           <span>{isAnalyzing ? `${Math.round(ocrProgress)}%` : 'Распознать'}</span>
                         </button>
                       </div>
                     </div>
 
                     {isAnalyzing && (
-                      <div className="w-full bg-[#06080B] rounded-full h-1.5 overflow-hidden border border-[#1C2736]">
+                      <div className="w-full bg-[#06080B] rounded-full h-1 overflow-hidden border border-[#1C2736]">
                         <div
                           className="bg-cyan-400 h-full transition-all duration-100"
                           style={{ width: `${ocrProgress}%` }}
@@ -1165,387 +1172,424 @@ export default function PardonCalculatorView() {
               </div>
             </section>
 
-            {/* ARTICLES & OFFENSES HUB */}
-            <section className="dark-panel p-5 sm:p-6 space-y-4 border-[#1C2736]">
-              <div className="flex items-center justify-between border-b border-[#1C2736] pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-teal-400"></div>
-                  <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
-                    Статьи и судимости
-                  </h2>
-                  <span className="px-2 py-0.5 rounded-full bg-[#101722] border border-[#1C2736] text-xs font-mono font-bold text-cyan-300">
-                    {rowCalculations.length}
-                  </span>
+            {/* CARD 2 (lg:col-span-5): FOCUSED FINANCIAL COMMAND HUB */}
+            <section className="lg:col-span-5 dark-panel-hero p-4 sm:p-5 flex flex-col justify-between border-[#1C2736] space-y-3">
+              <div>
+                <div className="flex items-center justify-between border-b border-[#1C2736] pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
+                    <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+                      Финансовый расчёт
+                    </h2>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono font-bold text-cyan-300 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/25">
+                      РАСЧЁТ ГОТОВ
+                    </span>
+                    <span className="text-[11px] font-mono text-teal-400">
+                      {rowCalculations.filter(r => !r.isBlocked).length} активных
+                    </span>
+                  </div>
                 </div>
+
+                {/* Main calculation display */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-3">
+                  {/* Total sum box */}
+                  <div className="sm:col-span-5 p-3 rounded-xl bg-[#06090F] border border-[#1C2736] flex flex-col justify-between">
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                        К оплате:
+                      </span>
+                      <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white tabular-nums mt-0.5">
+                        ${finalSum.toLocaleString('ru-RU')}
+                      </div>
+                    </div>
+                    {rawSum > TOTAL_CAP && (
+                      <div className="mt-1">
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/25 text-[10px] font-bold text-amber-400">
+                          Лимит $170k (без: ${rawSum.toLocaleString('ru-RU')})
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 80/20 Split box */}
+                  <div className="sm:col-span-7 p-3 rounded-xl bg-[#06090F] border border-[#1C2736] space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-300 flex items-center gap-1.5 font-medium">
+                        <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Казна (80%):</span>
+                      </span>
+                      <span className="font-mono font-bold text-cyan-300 tabular-nums">
+                        ${treasurySum.toLocaleString('ru-RU')}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-300 flex items-center gap-1.5 font-medium">
+                        <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+                        <span>Сотруднику (20%):</span>
+                      </span>
+                      <span className="font-mono font-bold text-slate-200 tabular-nums">
+                        ${selfSum.toLocaleString('ru-RU')}
+                      </span>
+                    </div>
+
+                    {/* Split bar */}
+                    <div className="w-full h-1.5 rounded-full bg-[#121A26] overflow-hidden flex border border-[#1C2736]">
+                      <div className="bg-cyan-500 h-full" style={{ width: '80%' }} />
+                      <div className="bg-teal-400 h-full" style={{ width: '20%' }} />
+                    </div>
+
+                    <div className="flex justify-between items-center text-[11px] text-slate-400 pt-0.5 border-t border-[#1C2736]">
+                      <span>Суточный долг смены:</span>
+                      <span className="font-mono font-bold text-white tabular-nums">${totalDailyDebt.toLocaleString('ru-RU')}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Primary Action Button */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={handleCopyReportAndRecord}
+                  className="btn-cyan-cta w-full py-2.5 px-4 flex items-center justify-center gap-2 text-xs sm:text-sm font-black text-[#04070A] uppercase tracking-wider cursor-pointer shadow-md active:scale-98"
+                >
+                  {copiedReport ? (
+                    <>
+                      <Check className="w-4 h-4 text-black stroke-[3]" />
+                      <span>Отчёт скопирован и внесён в казну!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 text-black stroke-[2.5]" />
+                      <span>Скопировать отчёт и внести в казну</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </section>
+          </div>
+
+          {/* BOTTOM ROW (FULL WIDTH 100%): ARTICLES & CONVICTIONS REGISTRY */}
+          <section className="dark-panel p-4 sm:p-5 space-y-3.5 border-[#1C2736]">
+            <div className="flex items-center justify-between border-b border-[#1C2736] pb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-2 h-2 rounded-full bg-teal-400"></div>
+                <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+                  Статьи и судимости
+                </h2>
+                <span className="px-2 py-0.5 rounded-full bg-[#101722] border border-[#1C2736] text-[11px] font-mono font-bold text-cyan-300">
+                  {rowCalculations.length}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowReportBox(!showReportBox)}
+                  className="text-slate-400 hover:text-cyan-300 text-xs flex items-center gap-1.5 font-semibold cursor-pointer transition-colors"
+                  title="Показать / скрыть текст готового рапорта"
+                >
+                  <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{showReportBox ? 'Скрыть рапорт' : 'Рапорт для базы'}</span>
+                </button>
 
                 <button
                   type="button"
                   onClick={handleAddManualRow}
-                  className="btn-cyan-subtle flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-bold cursor-pointer"
+                  className="btn-cyan-subtle flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold cursor-pointer"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                   <span>Добавить статью</span>
                 </button>
               </div>
+            </div>
 
-              {/* Rapid Presets Bar */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-slate-400 font-mono uppercase tracking-wider mr-1 font-bold">Частые:</span>
-                {QUICK_ARTICLES.map(preset => (
-                  <button
-                    key={preset.code}
-                    type="button"
-                    onClick={() => handleQuickAddArticle(preset)}
-                    className="px-3 py-1.5 rounded-lg bg-[#0E1520] hover:bg-[#141F2E] border border-[#1C2736] hover:border-cyan-500/40 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5"
-                  >
-                    <Plus className="w-3 h-3 text-cyan-400" />
-                    <span>{preset.label}</span>
-                  </button>
-                ))}
-              </div>
+            {/* Collapsible Ready Report Box */}
+            <AnimatePresence>
+              {showReportBox && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.12 }}
+                  className="p-3.5 rounded-xl bg-[#06090F] border border-cyan-500/30 space-y-2 overflow-hidden"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Готовый рапорт для базы данных (database.gov):
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyOnlyText}
+                      className="text-cyan-400 hover:text-cyan-300 text-xs flex items-center gap-1.5 font-semibold cursor-pointer"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Скопировать только текст</span>
+                    </button>
+                  </div>
+                  <div className="dark-terminal p-3 rounded-lg font-mono text-xs text-slate-300 whitespace-pre-line leading-relaxed select-all border-[#1C2736]">
+                    {reportText}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-              {/* High-Performance Articles Table (Expansive & Comfortable) */}
-              <div className="overflow-x-auto scrollbar-hide pt-1">
-                <table className="w-full text-left text-sm border-collapse">
-                  <thead>
-                    <tr className="border-b border-[#1C2736] text-slate-400 uppercase tracking-wider text-xs font-bold">
-                      <th className="pb-3 px-2 w-8"></th>
-                      <th className="pb-3 px-2.5">Статья</th>
-                      <th className="pb-3 px-2.5">Дата</th>
-                      <th className="pb-3 px-2.5">Время</th>
-                      <th className="pb-3 px-2.5">Тяжесть</th>
-                      <th className="pb-3 px-2.5 text-right">Пошлина</th>
-                      <th className="pb-3 px-2.5 text-right">Статус</th>
+            {/* Rapid Presets Ribbon in 1 clean row */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <span className="text-xs text-slate-400 font-mono uppercase tracking-wider mr-1 font-bold">Частые:</span>
+              {QUICK_ARTICLES.map(preset => (
+                <button
+                  key={preset.code}
+                  type="button"
+                  onClick={() => handleQuickAddArticle(preset)}
+                  className="px-2.5 py-1 rounded-lg bg-[#0E1520] hover:bg-[#141F2E] border border-[#1C2736] hover:border-cyan-500/40 text-slate-300 hover:text-white text-xs font-semibold transition-all cursor-pointer active:scale-95 flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3 text-cyan-400" />
+                  <span>{preset.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* High-Performance Articles Table (Full Width) */}
+            <div className="overflow-x-auto scrollbar-hide pt-1">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-[#1C2736] text-slate-400 uppercase tracking-wider text-xs font-bold">
+                    <th className="pb-2.5 px-2 w-10"></th>
+                    <th className="pb-2.5 px-2.5 w-36">Статья</th>
+                    <th className="pb-2.5 px-2.5 w-36">Дата</th>
+                    <th className="pb-2.5 px-2.5 w-40">Время</th>
+                    <th className="pb-2.5 px-2.5 min-w-[200px]">Тяжесть</th>
+                    <th className="pb-2.5 px-2.5 text-right w-36">Пошлина</th>
+                    <th className="pb-2.5 px-2.5 text-right w-36">Статус</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#16202E]">
+                  {rowCalculations.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-400 text-sm">
+                        <FileSearch className="w-7 h-7 mx-auto text-slate-500 mb-1.5" />
+                        <p className="text-slate-200 font-bold text-sm">Статьи ещё не добавлены</p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Нажмите быструю кнопку вверху или вставьте снимок (Ctrl+V)
+                        </p>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#16202E]">
-                    {rowCalculations.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="py-16 sm:py-20 text-center text-slate-400 text-sm">
-                          <FileSearch className="w-8 h-8 mx-auto text-slate-500 mb-2" />
-                          <p className="text-slate-200 font-bold text-base">Статьи ещё не добавлены</p>
-                          <p className="text-sm text-slate-400 mt-1">
-                            Нажмите быструю кнопку вверху или вставьте снимок (Ctrl+V)
-                          </p>
+                  ) : (
+                    rowCalculations.map(row => (
+                      <tr key={row.id} className="hover:bg-[#0E1520] transition-colors">
+                        <td className="py-2 px-2 w-10">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRow(row.id)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-[#1A2433] cursor-pointer"
+                            title="Удалить статью"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </td>
-                      </tr>
-                    ) : (
-                      rowCalculations.map(row => (
-                        <tr key={row.id} className="hover:bg-[#0E1520] transition-colors">
-                          <td className="py-2.5 px-2 w-8">
+                        <td className="py-2 px-2.5">
+                          <input
+                            type="text"
+                            value={row.code}
+                            onChange={e => handleUpdateRow(row.id, 'code', e.target.value)}
+                            className="dark-input px-2.5 py-1.5 text-sm font-mono font-bold text-white w-28"
+                          />
+                        </td>
+                        <td className="py-2 px-2.5">
+                          <input
+                            type="text"
+                            value={row.date}
+                            onChange={e => handleUpdateRow(row.id, 'date', e.target.value)}
+                            className="dark-input px-2.5 py-1.5 text-sm font-mono text-slate-200 w-28"
+                          />
+                        </td>
+                        <td className="py-2 px-2.5">
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="text"
+                              value={row.time}
+                              onChange={e => handleUpdateRow(row.id, 'time', e.target.value)}
+                              className="dark-input px-2.5 py-1.5 text-sm font-mono text-slate-200 w-20"
+                            />
                             <button
                               type="button"
-                              onClick={() => handleRemoveRow(row.id)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-[#1A2433] cursor-pointer"
-                              title="Удалить статью"
+                              onClick={() => setRowTimeToNow(row.id)}
+                              className="p-1 rounded-lg hover:bg-[#162130] text-slate-400 hover:text-cyan-400 cursor-pointer"
+                              title="Поставить текущее время"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Clock className="w-3.5 h-3.5" />
                             </button>
-                          </td>
-                          <td className="py-2.5 px-2.5">
-                            <input
-                              type="text"
-                              value={row.code}
-                              onChange={e => handleUpdateRow(row.id, 'code', e.target.value)}
-                              className="dark-input px-3 py-2 text-sm sm:text-base font-mono font-bold text-white w-28"
-                            />
-                          </td>
-                          <td className="py-2.5 px-2.5">
-                            <input
-                              type="text"
-                              value={row.date}
-                              onChange={e => handleUpdateRow(row.id, 'date', e.target.value)}
-                              className="dark-input px-3 py-2 text-sm sm:text-base font-mono text-slate-200 w-28"
-                            />
-                          </td>
-                          <td className="py-2.5 px-2.5">
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="text"
-                                value={row.time}
-                                onChange={e => handleUpdateRow(row.id, 'time', e.target.value)}
-                                className="dark-input px-3 py-2 text-sm sm:text-base font-mono text-slate-200 w-20"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setRowTimeToNow(row.id)}
-                                className="p-1.5 rounded-lg hover:bg-[#162130] text-slate-400 hover:text-cyan-400 cursor-pointer"
-                                title="Поставить текущее время"
-                              >
-                                <Clock className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-2.5">
-                            <CustomSelect
-                              value={row.tyazhest}
-                              onChange={val => handleUpdateRow(row.id, 'tyazhest', val)}
-                              options={Object.entries(LABELS).map(([k, v]) => ({ value: k, label: v }))}
-                              size="sm"
-                            />
-                          </td>
-                          <td className="py-2.5 px-2.5 text-right font-mono font-bold text-sm sm:text-base tabular-nums text-slate-100">
-                            {row.price ? `$${row.price.toLocaleString('ru-RU')}` : '—'}
-                          </td>
-                          <td className="py-2.5 px-2.5 text-right text-xs font-bold">
-                            <span
-                              className={`px-3 py-1 rounded-md ${
-                                row.isBlocked
-                                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                  : 'bg-teal-500/10 text-teal-400 border border-teal-500/25'
-                              }`}
-                            >
-                              {row.statusText}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </div>
-
-          {/* RIGHT SIDE (5 COLS): FOCUSED STICKY FINANCIAL COMMAND HUB */}
-          <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-6">
-            
-            <section className="dark-panel-hero p-6 space-y-5">
-              <div className="flex items-center justify-between border-b border-[#1C2736] pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></div>
-                  <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
-                    Финансовый расчёт
-                  </h2>
-                </div>
-                <span className="text-xs font-mono font-bold text-cyan-300 px-2.5 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/25">
-                  РАСЧЁТ ГОТОВ
-                </span>
-              </div>
-
-              {/* Large Fee Display */}
-              <div className="p-5 rounded-2xl bg-[#06090F] border border-[#1C2736] space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    К оплате гражданином:
-                  </span>
-                  <span className="text-xs font-mono text-teal-400">
-                    {rowCalculations.filter(r => !r.isBlocked).length} активных статей
-                  </span>
-                </div>
-                
-                <div className="text-4xl sm:text-5xl lg:text-6xl font-black font-mono tracking-tight text-white tabular-nums">
-                  ${finalSum.toLocaleString('ru-RU')}
-                </div>
-
-                {rawSum > TOTAL_CAP && (
-                  <div className="pt-2">
-                    <span className="inline-block px-3 py-1 rounded-md bg-amber-500/10 border border-amber-500/25 text-xs font-bold text-amber-400">
-                      Лимит $170 000 применен (без лимита: ${rawSum.toLocaleString('ru-RU')})
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* 80 / 20 Split Allocation */}
-              <div className="p-4 rounded-2xl bg-[#06090F] border border-[#1C2736] space-y-3">
-                <div className="flex justify-between items-center text-sm sm:text-base">
-                  <span className="text-slate-200 flex items-center gap-2 font-semibold">
-                    <Building2 className="w-4 h-4 text-cyan-400" />
-                    <span>В казну штата (80%):</span>
-                  </span>
-                  <span className="font-mono font-bold text-cyan-300 text-base sm:text-lg tabular-nums">
-                    ${treasurySum.toLocaleString('ru-RU')}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center text-sm sm:text-base">
-                  <span className="text-slate-200 flex items-center gap-2 font-semibold">
-                    <ShieldCheck className="w-4 h-4 text-teal-400" />
-                    <span>Вознаграждение сотруднику (20%):</span>
-                  </span>
-                  <span className="font-mono font-bold text-slate-200 text-base sm:text-lg tabular-nums">
-                    ${selfSum.toLocaleString('ru-RU')}
-                  </span>
-                </div>
-
-                {/* Split Allocation Progress Bar */}
-                <div className="w-full h-2 rounded-full bg-[#121A26] overflow-hidden flex border border-[#1C2736]">
-                  <div className="bg-cyan-500 h-full rounded-l-full" style={{ width: '80%' }} />
-                  <div className="bg-teal-400 h-full rounded-r-full" style={{ width: '20%' }} />
-                </div>
-
-                <div className="pt-2 flex justify-between text-xs sm:text-sm text-slate-300 border-t border-[#1C2736]">
-                  <span>Суточный долг за смену:</span>
-                  <span className="font-mono font-bold text-white tabular-nums">${totalDailyDebt.toLocaleString('ru-RU')}</span>
-                </div>
-              </div>
-
-              {/* HERO PRIMARY ACTION BUTTON (COPY & SUBMIT) */}
-              <button
-                type="button"
-                onClick={handleCopyReportAndRecord}
-                className="btn-cyan-cta w-full py-4 px-5 flex items-center justify-center gap-2.5 text-sm sm:text-base font-black text-[#04070A] uppercase tracking-wider cursor-pointer shadow-lg active:scale-98"
-              >
-                {copiedReport ? (
-                  <>
-                    <Check className="w-5 h-5 text-black stroke-[3]" />
-                    <span>Отчёт скопирован и внесён в казну!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-5 h-5 text-black stroke-[2.5]" />
-                    <span>Скопировать отчёт и внести в казну</span>
-                  </>
-                )}
-              </button>
-
-              {/* Report Preview & 1-Click Copy Text */}
-              <div className="space-y-2 pt-1">
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span className="uppercase tracking-wider font-bold">Готовый рапорт для базы:</span>
-                  <button
-                    type="button"
-                    onClick={handleCopyOnlyText}
-                    className="text-slate-400 hover:text-cyan-300 cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Только текст</span>
-                  </button>
-                </div>
-                <div className="dark-terminal p-4 rounded-xl font-mono text-xs sm:text-sm text-slate-300 whitespace-pre-line leading-relaxed select-all border-[#1C2736]">
-                  {reportText}
-                </div>
-              </div>
-            </section>
-          </div>
+                          </div>
+                        </td>
+                        <td className="py-2 px-2.5">
+                          <CustomSelect
+                            value={row.tyazhest}
+                            onChange={val => handleUpdateRow(row.id, 'tyazhest', val)}
+                            options={Object.entries(LABELS).map(([k, v]) => ({ value: k, label: v }))}
+                            size="sm"
+                          />
+                        </td>
+                        <td className="py-2 px-2.5 text-right font-mono font-bold text-sm tabular-nums text-slate-100">
+                          {row.price ? `$${row.price.toLocaleString('ru-RU')}` : '—'}
+                        </td>
+                        <td className="py-2 px-2.5 text-right text-xs font-bold">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-md ${
+                              row.isBlocked
+                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                : 'bg-teal-500/10 text-teal-400 border border-teal-500/25'
+                            }`}
+                          >
+                            {row.statusText}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
       )}
 
       {/* TAB 2: TREASURY LEDGER WORKSPACE */}
       {mainTab === 'treasury' && (
-        <div className="dark-panel p-6 space-y-5 border-[#1C2736]">
-          <div className="flex flex-wrap items-center justify-between border-b border-[#1C2736] pb-4 gap-3">
+        <div className="dark-panel p-4 sm:p-5 space-y-4 border-[#1C2736]">
+          <div className="flex flex-wrap items-center justify-between border-b border-[#1C2736] pb-3 gap-3">
             <div>
-              <div className="flex items-center gap-2.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
-                <h2 className="text-base font-bold text-white uppercase tracking-wider">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+                <h2 className="text-xs font-bold text-white uppercase tracking-wider">
                   Реестр казны за текущую смену
                 </h2>
               </div>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Автоматический учёт всех выданных помилований и формирование сводного рапорта
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={handleCopyTreasuryReport}
-                className="btn-cyan-subtle px-4 py-2 text-sm font-bold flex items-center gap-2"
+                className="btn-cyan-subtle px-3 py-1.5 text-xs font-bold flex items-center gap-1.5"
               >
-                <Copy className="w-4 h-4" />
+                <Copy className="w-3.5 h-3.5" />
                 <span>Скопировать отчёт казны</span>
               </button>
               <button
                 type="button"
                 onClick={handlePromptClearTreasury}
-                className="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 text-sm font-bold flex items-center gap-2 cursor-pointer transition-colors"
+                className="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
                 <span>Очистить реестр</span>
               </button>
             </div>
           </div>
 
-          {/* KPI Metrics Strip */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-5 rounded-2xl bg-[#06090F] border border-[#1C2736]">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+          {/* KPI Metrics Strip - 4 Balanced Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="p-3.5 rounded-xl bg-[#06090F] border border-[#1C2736]">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                 Помиловано граждан
               </span>
-              <div className="text-3xl sm:text-4xl font-bold font-mono text-white mt-1">
+              <div className="text-2xl font-bold font-mono text-white mt-0.5">
                 {treasuryEntries.length}
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-[#06090F] border border-[#1C2736]">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                Общая сумма помилований
+            <div className="p-3.5 rounded-xl bg-[#06090F] border border-[#1C2736]">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Общая сумма
               </span>
-              <div className="text-3xl sm:text-4xl font-bold font-mono text-white mt-1">
+              <div className="text-2xl font-bold font-mono text-white mt-0.5">
                 ${totalTreasuryAll.toLocaleString('ru-RU')}
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-[#06090F] border border-cyan-500/30">
-              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">
-                К сдаче в казну (80%)
+            <div className="p-3.5 rounded-xl bg-[#06090F] border border-cyan-500/30">
+              <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block">
+                В казну штата (80%)
               </span>
-              <div className="text-3xl sm:text-4xl font-bold font-mono text-cyan-300 mt-1">
+              <div className="text-2xl font-bold font-mono text-cyan-300 mt-0.5">
                 ${treasuryAmount80.toLocaleString('ru-RU')}
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-[#06090F] border border-teal-500/30">
+              <span className="text-[11px] font-bold text-teal-400 uppercase tracking-wider block">
+                Сотрудникам (20%)
+              </span>
+              <div className="text-2xl font-bold font-mono text-teal-300 mt-0.5">
+                ${treasuryAmount20.toLocaleString('ru-RU')}
               </div>
             </div>
           </div>
 
           {/* Shift Report Terminal */}
-          <div className="p-5 rounded-2xl bg-[#06090F] border border-[#1C2736] space-y-2">
+          <div className="p-3.5 rounded-xl bg-[#06090F] border border-[#1C2736] space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                 Отчёт для рапорта сдачи казны:
               </span>
               <button
                 type="button"
                 onClick={handleCopyTreasuryReport}
-                className="text-cyan-400 hover:text-cyan-300 text-sm flex items-center gap-1.5 font-semibold cursor-pointer"
+                className="text-cyan-400 hover:text-cyan-300 text-xs flex items-center gap-1 font-semibold cursor-pointer"
               >
-                <Copy className="w-3.5 h-3.5" />
+                <Copy className="w-3 h-3" />
                 <span>Скопировать текст</span>
               </button>
             </div>
-            <div className="dark-terminal p-3.5 rounded-xl font-mono text-sm text-slate-200 whitespace-pre-line select-all border-[#1C2736]">
+            <div className="dark-terminal p-2.5 rounded-lg font-mono text-xs text-slate-200 whitespace-pre-line select-all border-[#1C2736]">
               {treasuryReportText}
             </div>
           </div>
 
           {/* Ledger Table */}
-          <div className="overflow-x-auto scrollbar-hide pt-2">
+          <div className="overflow-x-auto scrollbar-hide pt-1">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b border-[#1C2736] text-slate-400 uppercase tracking-wider text-xs font-bold">
-                  <th className="pb-3 px-3">Гражданин</th>
-                  <th className="pb-3 px-3">Дата</th>
-                  <th className="pb-3 px-3 text-right">Сумма помилования</th>
-                  <th className="pb-3 px-3 text-right">В казну (80%)</th>
-                  <th className="pb-3 px-3 text-right w-20">Действие</th>
+                  <th className="pb-2.5 px-3">Гражданин</th>
+                  <th className="pb-2.5 px-3">Дата</th>
+                  <th className="pb-2.5 px-3 text-right">Сумма помилования</th>
+                  <th className="pb-2.5 px-3 text-right">В казну (80%)</th>
+                  <th className="pb-2.5 px-3 text-right w-16">Действие</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#16202E]">
                 {treasuryEntries.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-slate-400 text-sm">
+                    <td colSpan={5} className="py-10 text-center text-slate-400 text-sm">
                       Реестр смены пуст. Оформите гражданина во вкладке «Оформление гражданина».
                     </td>
                   </tr>
                 ) : (
                   treasuryEntries.map(entry => (
                     <tr key={entry.id} className="hover:bg-[#0E1520] transition-colors">
-                      <td className="py-3 px-3 font-bold text-white text-base">{entry.citizenName}</td>
-                      <td className="py-3 px-3 font-mono text-slate-400 text-sm">{entry.date}</td>
-                      <td className="py-3 px-3 text-right font-mono font-bold text-slate-200 text-base">
+                      <td className="py-2.5 px-3 font-bold text-white text-sm">{entry.citizenName}</td>
+                      <td className="py-2.5 px-3 font-mono text-slate-400 text-xs">{entry.date}</td>
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-200 text-sm">
                         ${entry.amount.toLocaleString('ru-RU')}
                       </td>
-                      <td className="py-3 px-3 text-right font-mono font-bold text-cyan-300 text-base">
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-cyan-300 text-sm">
                         ${Math.round(entry.amount * 0.8).toLocaleString('ru-RU')}
                       </td>
-                      <td className="py-3 px-3 text-right">
+                      <td className="py-2.5 px-3 text-right">
                         <button
                           type="button"
                           onClick={() => handleRemoveTreasuryEntry(entry.id)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 cursor-pointer"
+                          className="p-1 rounded-lg text-slate-500 hover:text-rose-400 cursor-pointer"
                           title="Удалить запись"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
                     </tr>
